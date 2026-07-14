@@ -10,6 +10,11 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 export default defineConfig({
   plugins: [react()],
   test: {
+    coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json', 'html'],
+      include: ['src/**/*.ts', 'src/**/*.tsx'],
+    },
     projects: [{
       extends: true,
       test: {
@@ -20,11 +25,6 @@ export default defineConfig({
           '@': path.resolve(__dirname, './src')
         },
         exclude: ['node_modules', 'dist', '.idea', '.git', '.cache', 'tests-e2e'],
-        coverage: {
-          provider: 'v8',
-          reporter: ['text', 'json', 'html'],
-          include: ['src/**/*.ts', 'src/**/*.tsx'],
-        },
       }
     }, {
       extends: true,

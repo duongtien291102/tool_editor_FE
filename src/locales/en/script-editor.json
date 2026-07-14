@@ -1,0 +1,26 @@
+{
+  "toolbar": {
+    "undo": "Undo",
+    "redo": "Redo"
+  },
+  "status": {
+    "saving": "Saving...",
+    "saved": "Saved",
+    "dirty": "Editing...",
+    "error": "Error saving"
+  },
+  "sceneList": {
+    "title": "Scene List",
+    "untitledScene": "Untitled Scene",
+    "noNotes": "No notes"
+  },
+  "editor": {
+    "selectScene": "Please select a scene to edit",
+    "sceneTitle": "Scene Title",
+    "sceneTitlePlaceholder": "Enter scene title...",
+    "elements": "Elements",
+    "elementPlaceholder": "Enter content...",
+    "notes": "Notes",
+    "notesPlaceholder": "Enter notes for this scene..."
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "toolbar": {
+    "undo": "Hoàn tác",
+    "redo": "Làm lại"
+  },
+  "status": {
+    "saving": "Đang lưu...",
+    "saved": "Đã lưu",
+    "dirty": "Đang chỉnh sửa...",
+    "error": "Lỗi lưu file"
+  },
+  "sceneList": {
+    "title": "Danh sách Cảnh",
+    "untitledScene": "Cảnh chưa đặt tên",
+    "noNotes": "Không có ghi chú"
+  },
+  "editor": {
+    "selectScene": "Vui lòng chọn một cảnh để chỉnh sửa",
+    "sceneTitle": "Tiêu đề cảnh",
+    "sceneTitlePlaceholder": "Nhập tiêu đề cảnh...",
+    "elements": "Thành phần",
+    "elementPlaceholder": "Nhập nội dung...",
+    "notes": "Ghi chú",
+    "notesPlaceholder": "Nhập ghi chú cho cảnh này..."
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "status": {
+    "loading": "Đang tải...",
+    "ready": "Sẵn sàng"
+  },
+  "panels": {
+    "preview": "Trình chiếu",
+    "timeline": "Dòng thời gian",
+    "properties": "Thuộc tính",
+    "projectExplorer": "Quản lý dự án",
+    "scriptEditor": "Soạn thảo kịch bản"
+  },
+  "errors": {
+    "panelNotFound": "Không tìm thấy Panel \"{{componentId}}\" trong registry."
+  }
+}

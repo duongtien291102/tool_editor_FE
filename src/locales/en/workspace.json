@@ -1,0 +1,14 @@
+{
+  "header": {
+    "title": "AI Video Studio",
+    "untitledProject": "Untitled Project",
+    "local": "Local",
+    "undo": "Undo",
+    "redo": "Redo",
+    "search": "Search or jump to... (Ctrl+K)",
+    "commandPalette": "Command Palette",
+    "settings": "Settings",
+    "user": "User",
+    "export": "Export"
+  }
+}

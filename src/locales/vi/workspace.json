@@ -1,0 +1,14 @@
+{
+  "header": {
+    "title": "AI Video Studio",
+    "untitledProject": "Dự án chưa đặt tên",
+    "local": "Nội bộ",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại",
+    "search": "Tìm kiếm hoặc chuyển đến... (Ctrl+K)",
+    "commandPalette": "Bảng lệnh",
+    "settings": "Cài đặt",
+    "user": "Người dùng",
+    "export": "Xuất video"
+  }
+}

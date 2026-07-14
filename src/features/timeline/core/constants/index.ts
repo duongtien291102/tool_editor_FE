@@ -1,0 +1,17 @@
+export const TIMELINE_CONSTANTS = {
+  DEFAULT_FPS: 30,
+  ZOOM_MIN: 0.1,
+  ZOOM_MAX: 10,
+  TRACK_HEIGHT: 64,
+  CLIP_HEIGHT: 60,
+  GRID_SIZE: 10,
+  SNAP_DISTANCE: 5,
+  COLORS: {
+    BACKGROUND: '#1e1e1e',
+    TRACK_BACKGROUND: '#252526',
+    GRID_LINE: '#333333',
+    PLAYHEAD: '#ff0000',
+    CLIP_DEFAULT: '#007acc',
+    CLIP_SELECTED: '#0098ff',
+  },
+} as const;

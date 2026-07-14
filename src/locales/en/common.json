@@ -1,0 +1,16 @@
+{
+  "status": {
+    "loading": "Loading...",
+    "ready": "Ready"
+  },
+  "panels": {
+    "preview": "Preview",
+    "timeline": "Timeline",
+    "properties": "Properties",
+    "projectExplorer": "Project Explorer",
+    "scriptEditor": "Script Editor"
+  },
+  "errors": {
+    "panelNotFound": "Panel \"{{componentId}}\" not found in registry."
+  }
+}

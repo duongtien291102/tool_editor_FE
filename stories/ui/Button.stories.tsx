@@ -1,5 +1,5 @@
-import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from '../../src/components/ui/Button';
+import type { Meta, StoryObj } from '@storybook/react-vite';
+import { Button } from '@/components/ui/Button';
 import { Mail } from 'lucide-react';
 
 const meta = {

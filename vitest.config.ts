@@ -20,6 +20,7 @@ export default defineConfig({
       {
         extends: true,
         test: {
+          name: 'unit',
           environment: 'jsdom',
           globals: true,
           setupFiles: ['./vitest.setup.ts'],

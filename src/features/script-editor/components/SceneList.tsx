@@ -4,16 +4,29 @@ import { useScriptStore } from '../store/scriptStore';
 
 export const SceneList: React.FC = () => {
   const { t } = useTranslation('scriptEditor');
-  const script = useScriptStore(state => state.script);
-  const activeSceneId = useScriptStore(state => state.activeSceneId);
-  const setActiveScene = useScriptStore(state => state.setActiveScene);
+  const script = useScriptStore((state) => state.script);
+  const activeSceneId = useScriptStore((state) => state.activeSceneId);
+  const setActiveScene = useScriptStore((state) => state.setActiveScene);
+  const addScene = useScriptStore((state) => state.addScene);
+  const deleteScene = useScriptStore((state) => state.deleteScene);
+  const reorderScene = useScriptStore((state) => state.reorderScene);
 
   if (!script) return null;
 
   return (
     <div className="w-64 border-r border-border bg-card h-full flex flex-col shrink-0">
-      <div className="h-10 border-b border-border flex items-center px-4 font-medium text-sm">
-        {t('sceneList.title')}
+      <div className="h-10 border-b border-border flex items-center justify-between px-3 font-medium text-sm">
+        <span>{t('sceneList.title')}</span>
+        <button
+          type="button"
+          className="text-xs text-primary"
+          onClick={() => {
+            const name = window.prompt('Scene name');
+            if (name?.trim()) void addScene(name.trim());
+          }}
+        >
+          Add scene
+        </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
         {script.scenes.map((scene, index) => (
@@ -27,6 +40,38 @@ export const SceneList: React.FC = () => {
             </div>
             <div className="text-xs text-muted-foreground truncate">
               {scene.notes || t('sceneList.noNotes')}
+            </div>
+            <div className="flex gap-2 text-[10px]" onClick={(event) => event.stopPropagation()}>
+              <button
+                type="button"
+                aria-label={`Move ${scene.title} up`}
+                disabled={index === 0}
+                onClick={() => {
+                  void reorderScene(scene.id, index - 1);
+                }}
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                aria-label={`Move ${scene.title} down`}
+                disabled={index === script.scenes.length - 1}
+                onClick={() => {
+                  void reorderScene(scene.id, index + 1);
+                }}
+              >
+                ↓
+              </button>
+              <button
+                type="button"
+                className="text-destructive"
+                aria-label={`Delete scene ${scene.title}`}
+                onClick={() => {
+                  if (window.confirm(`Delete scene “${scene.title}”?`)) void deleteScene(scene.id);
+                }}
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}

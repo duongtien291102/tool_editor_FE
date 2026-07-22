@@ -20,7 +20,11 @@ class ConfigService {
   }
 
   public getApiBaseUrl(): string {
-    return import.meta.env.VITE_API_BASE_URL || '/api';
+    const configuredUrl: unknown =
+      import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL;
+    return typeof configuredUrl === 'string' && configuredUrl.length > 0
+      ? configuredUrl.replace(/\/$/, '')
+      : 'http://localhost:8080';
   }
 }
 

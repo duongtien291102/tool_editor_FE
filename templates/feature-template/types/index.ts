@@ -1,2 +1,2 @@
 // Types for __FEATURE_NAME__
-export interface __FEATURE_NAME__State {}
+export type __FEATURE_NAME__State = Record<string, never>;

@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 
 import { ProjectExplorer } from '@/features/project-explorer';
 import { ScriptEditorPanel } from '@/features/script-editor';
+import { AuthProvider, LoginPage, useAuth } from '@/features/auth';
+import { MediaBrowser } from '@/features/media-browser';
 
 const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
@@ -15,7 +17,12 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
   useEffect(() => {
     appLogger.info('Bootstrapping application...');
-    
+
+    panelRegistry.register({
+      id: 'MediaBrowser',
+      title: 'Media',
+      component: <MediaBrowser />,
+    });
     panelRegistry.register({
       id: 'ProjectExplorer',
       title: t('panels.projectExplorer', 'Project Explorer'),
@@ -29,12 +36,20 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     panelRegistry.register({
       id: 'Preview',
       title: t('panels.preview', 'Preview'),
-      component: <div className="bg-black flex items-center justify-center h-full text-white">Preview (Mock from Registry)</div>,
+      component: (
+        <div className="bg-black flex items-center justify-center h-full text-white">
+          Preview (Mock from Registry)
+        </div>
+      ),
     });
     panelRegistry.register({
       id: 'Timeline',
       title: t('panels.timeline', 'Timeline'),
-      component: <div className="p-4 h-full text-sm border-t border-border/50">Timeline (Mock from Registry)</div>,
+      component: (
+        <div className="p-4 h-full text-sm border-t border-border/50">
+          Timeline (Mock from Registry)
+        </div>
+      ),
     });
     panelRegistry.register({
       id: 'Properties',
@@ -44,9 +59,23 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
     appLogger.info('App is ready');
     setIsReady(true);
+
+    return () => {
+      panelRegistry.unregister('ProjectExplorer');
+      panelRegistry.unregister('MediaBrowser');
+      panelRegistry.unregister('ScriptEditor');
+      panelRegistry.unregister('Preview');
+      panelRegistry.unregister('Timeline');
+      panelRegistry.unregister('Properties');
+    };
   }, []);
 
-  if (!isReady) return <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">Loading...</div>;
+  if (!isReady)
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
+        Loading...
+      </div>
+    );
 
   return <>{children}</>;
 };
@@ -54,14 +83,24 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <ThemeProvider>
-      {/* TanStack Query Provider will go here */}
-      {children}
-      <Toaster position="bottom-right" theme="system" />
+      <AuthProvider>
+        {children}
+        <Toaster position="bottom-right" theme="system" />
+      </AuthProvider>
     </ThemeProvider>
   );
 };
 
 const AppRouter: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  if (isLoading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
+        Restoring session...
+      </div>
+    );
+  }
+  if (!user) return <LoginPage />;
   return <EditorLayout />;
 };
 

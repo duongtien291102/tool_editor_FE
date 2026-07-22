@@ -6,11 +6,13 @@ export interface Workspace {
 
 export interface Project {
   id: string;
-  workspaceId: string;
+  workspaceId?: string;
   name: string;
   lastOpened: number;
   thumbnail?: string;
   createdAt: number;
+  description?: string;
+  status?: string;
 }
 
 export interface WorkspaceConfig {

@@ -2,14 +2,16 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useCurrentProject } from '../hooks/useCurrentProject';
+import { useAuth } from '@/features/auth';
 
 export const WorkspaceHeader: React.FC = () => {
   const { t } = useTranslation('workspace');
   const { fetchWorkspaceData } = useWorkspace();
   const { currentProject } = useCurrentProject();
+  const { user, logout } = useAuth();
 
   useEffect(() => {
-    fetchWorkspaceData();
+    void fetchWorkspaceData();
   }, [fetchWorkspaceData]);
 
   return (
@@ -23,17 +25,23 @@ export const WorkspaceHeader: React.FC = () => {
             {currentProject?.name || t('header.untitledProject')}
           </span>
           <span className="text-[10px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground uppercase font-bold tracking-wider">
-            {t('header.local')}
+            API
           </span>
         </div>
       </div>
-      
+
       {/* CENTER: Toolbar (Undo/Redo, Search, Command) */}
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs" title={t('header.undo')}>
+        <div
+          className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs"
+          title={t('header.undo')}
+        >
           U
         </div>
-        <div className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs" title={t('header.redo')}>
+        <div
+          className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs"
+          title={t('header.redo')}
+        >
           R
         </div>
         <div className="h-4 w-px bg-border mx-2"></div>
@@ -41,19 +49,32 @@ export const WorkspaceHeader: React.FC = () => {
           {t('header.search')}
         </div>
         <div className="h-4 w-px bg-border mx-2"></div>
-        <div className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs" title={t('header.commandPalette')}>
+        <div
+          className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs"
+          title={t('header.commandPalette')}
+        >
           C
         </div>
       </div>
 
       {/* RIGHT: Export, Settings, User */}
       <div className="flex items-center gap-2">
-        <div className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs" title={t('header.settings')}>
+        <div
+          className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs"
+          title={t('header.settings')}
+        >
           S
         </div>
-        <div className="h-8 w-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary cursor-pointer border border-primary/30" title={t('header.user')}>
-          AI
-        </div>
+        <button
+          type="button"
+          className="h-8 min-w-8 rounded-full bg-primary/20 px-2 text-xs font-bold text-primary border border-primary/30"
+          title={`${user?.username ?? t('header.user')} · Sign out`}
+          onClick={() => {
+            void logout();
+          }}
+        >
+          {(user?.username || 'AI').slice(0, 2).toUpperCase()}
+        </button>
         <div className="h-4 w-px bg-border mx-2"></div>
         <div className="h-8 px-4 rounded bg-primary text-primary-foreground text-xs flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity font-medium shadow-sm">
           {t('header.export')}

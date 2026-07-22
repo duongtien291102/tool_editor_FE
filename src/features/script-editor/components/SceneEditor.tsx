@@ -6,15 +6,21 @@ import type { Script, SceneElement } from '../types';
 
 export const SceneEditor: React.FC = () => {
   const { t } = useTranslation('scriptEditor');
-  const script = useScriptStore(state => state.script);
-  const activeSceneId = useScriptStore(state => state.activeSceneId);
-  const updateScript = useScriptStore(state => state.updateScript);
+  const script = useScriptStore((state) => state.script);
+  const activeSceneId = useScriptStore((state) => state.activeSceneId);
+  const updateScript = useScriptStore((state) => state.updateScript);
+  const addElement = useScriptStore((state) => state.addElement);
+  const deleteElement = useScriptStore((state) => state.deleteElement);
 
   if (!script || !activeSceneId) {
-    return <div className="flex-1 flex items-center justify-center text-muted-foreground">{t('editor.selectScene')}</div>;
+    return (
+      <div className="flex-1 flex items-center justify-center text-muted-foreground">
+        {t('editor.selectScene')}
+      </div>
+    );
   }
 
-  const sceneIndex = script.scenes.findIndex(s => s.id === activeSceneId);
+  const sceneIndex = script.scenes.findIndex((s) => s.id === activeSceneId);
   const scene = script.scenes[sceneIndex];
 
   if (!scene) return null;
@@ -35,7 +41,9 @@ export const SceneEditor: React.FC = () => {
 
   const handleElementChange = (elementId: string, newContent: string) => {
     const newScript = JSON.parse(JSON.stringify(script)) as Script;
-    const elIndex = newScript.scenes[sceneIndex].elements.findIndex((e: SceneElement) => e.id === elementId);
+    const elIndex = newScript.scenes[sceneIndex].elements.findIndex(
+      (e: SceneElement) => e.id === elementId,
+    );
     if (elIndex !== -1) {
       newScript.scenes[sceneIndex].elements[elIndex].content = newContent;
       updateScript(newScript);
@@ -45,12 +53,14 @@ export const SceneEditor: React.FC = () => {
   return (
     <div className="flex-1 overflow-y-auto p-6 bg-panel">
       <div className="max-w-3xl mx-auto flex flex-col gap-6">
-        
         {/* Title */}
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold uppercase text-muted-foreground">{t('editor.sceneTitle')}</label>
-          <input 
+          <label className="text-xs font-bold uppercase text-muted-foreground">
+            {t('editor.sceneTitle')}
+          </label>
+          <input
             type="text"
+            aria-label="Scene title"
             className="text-2xl font-bold bg-transparent border-b border-transparent hover:border-border focus:border-primary focus:outline-none transition-colors py-1"
             value={scene.title}
             onChange={(e) => handleTitleChange(e.target.value)}
@@ -60,14 +70,43 @@ export const SceneEditor: React.FC = () => {
 
         {/* Elements (Prompts) */}
         <div className="flex flex-col gap-4">
-          <label className="text-xs font-bold uppercase text-muted-foreground">{t('editor.elements')}</label>
-          {scene.elements.map(el => (
-            <div key={el.id} className="flex flex-col gap-1 border border-border p-3 rounded-lg bg-card">
-              <span className="text-[10px] uppercase font-bold text-primary">{el.type}</span>
-              <Editor 
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-bold uppercase text-muted-foreground">
+              {t('editor.elements')}
+            </label>
+            <button
+              type="button"
+              className="text-xs text-primary"
+              onClick={() => {
+                void addElement(scene.id);
+              }}
+            >
+              Add element
+            </button>
+          </div>
+          {scene.elements.map((el) => (
+            <div
+              key={el.id}
+              className="flex flex-col gap-1 border border-border p-3 rounded-lg bg-card"
+            >
+              <div className="flex justify-between">
+                <span className="text-[10px] uppercase font-bold text-primary">{el.type}</span>
+                <button
+                  type="button"
+                  className="text-[10px] text-destructive"
+                  aria-label={`Delete element ${el.id}`}
+                  onClick={() => {
+                    if (window.confirm('Delete this element?')) void deleteElement(scene.id, el.id);
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+              <Editor
                 value={el.content}
                 onChange={(val) => handleElementChange(el.id, val)}
                 placeholder={t('editor.elementPlaceholder')}
+                aria-label="Element content"
               />
             </div>
           ))}
@@ -75,15 +114,16 @@ export const SceneEditor: React.FC = () => {
 
         {/* Notes */}
         <div className="flex flex-col gap-2">
-          <label className="text-xs font-bold uppercase text-muted-foreground">{t('editor.notes')}</label>
-          <Editor 
+          <label className="text-xs font-bold uppercase text-muted-foreground">
+            {t('editor.notes')}
+          </label>
+          <Editor
             value={scene.notes}
             onChange={handleNotesChange}
             placeholder={t('editor.notesPlaceholder')}
             className="text-xs"
           />
         </div>
-
       </div>
     </div>
   );

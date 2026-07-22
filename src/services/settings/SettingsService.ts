@@ -3,6 +3,16 @@ export interface AppSettings {
   language: string;
 }
 
+function isPartialAppSettings(value: unknown): value is Partial<AppSettings> {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const candidate = value as Record<string, unknown>;
+  return (
+    (candidate.autoSave === undefined || typeof candidate.autoSave === 'boolean') &&
+    (candidate.language === undefined || typeof candidate.language === 'string')
+  );
+}
+
 const DEFAULT_SETTINGS: AppSettings = {
   autoSave: true,
   language: 'vi',
@@ -14,9 +24,12 @@ class SettingsService {
   getSettings(): AppSettings {
     try {
       const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (stored) return { ...DEFAULT_SETTINGS, ...JSON.parse(stored) };
-    } catch (e) {
-      console.error('Failed to load settings', e);
+      if (stored) {
+        const parsed: unknown = JSON.parse(stored);
+        if (isPartialAppSettings(parsed)) return { ...DEFAULT_SETTINGS, ...parsed };
+      }
+    } catch {
+      return DEFAULT_SETTINGS;
     }
     return DEFAULT_SETTINGS;
   }

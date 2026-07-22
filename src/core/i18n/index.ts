@@ -1,6 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { settingsService } from '../../services/settings/SettingsService';
+import { settingsService } from '@/services/settings/SettingsService';
 
 // Import translations
 import viCommon from '@/locales/vi/common.json';
@@ -18,28 +18,26 @@ const resources = {
     common: viCommon,
     workspace: viWorkspace,
     projectExplorer: viProjectExplorer,
-    scriptEditor: viScriptEditor
+    scriptEditor: viScriptEditor,
   },
   en: {
     common: enCommon,
     workspace: enWorkspace,
     projectExplorer: enProjectExplorer,
-    scriptEditor: enScriptEditor
-  }
+    scriptEditor: enScriptEditor,
+  },
 };
 
 const savedLang = settingsService.getSettings().language || 'vi';
 
-void i18n
-  .use(initReactI18next)
-  .init({
-    resources,
-    lng: savedLang, // Lấy từ Settings
-    fallbackLng: 'vi',
-    interpolation: {
-      escapeValue: false // React đã tự escape chống XSS
-    },
-    defaultNS: 'common'
-  });
+void i18n.use(initReactI18next).init({
+  resources,
+  lng: savedLang, // Lấy từ Settings
+  fallbackLng: 'vi',
+  interpolation: {
+    escapeValue: false, // React đã tự escape chống XSS
+  },
+  defaultNS: 'common',
+});
 
 export default i18n;

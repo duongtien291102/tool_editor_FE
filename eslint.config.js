@@ -23,9 +23,9 @@ export default tseslint.config(
       'unused-imports/no-unused-imports': 'error',
       'unused-imports/no-unused-vars': [
         'error',
-        { 'vars': 'all', 'varsIgnorePattern': '^_', 'args': 'after-used', 'argsIgnorePattern': '^_' }
+        { vars: 'all', varsIgnorePattern: '^_', args: 'after-used', argsIgnorePattern: '^_' },
       ],
-      
+
       // Strict TS rules
       '@typescript-eslint/no-floating-promises': 'error',
       '@typescript-eslint/no-empty-function': 'error',
@@ -57,20 +57,57 @@ export default tseslint.config(
           message: 'Barrel exports using "export *" are forbidden. Export explicitly.',
         },
         {
-          // Restrict cross-feature internal imports. 
+          // Restrict cross-feature internal imports.
           selector: 'ImportDeclaration[source.value=/^@\\/features\\/[^\\/]+\\/.+/]',
-          message: 'Direct internal imports between features are forbidden. Import only from the feature Public API (index.ts).',
+          message:
+            'Direct internal imports between features are forbidden. Import only from the feature Public API (index.ts).',
         },
         {
           // Restrict import.meta.env usage outside of ConfigService
-          selector: 'MemberExpression[object.meta.name="import"][object.property.name="meta"][property.name="env"]',
-          message: 'Accessing import.meta.env directly is banned. Use ConfigService instead.'
-        }
+          selector:
+            'MemberExpression[object.meta.name="import"][object.property.name="meta"][property.name="env"]',
+          message: 'Accessing import.meta.env directly is banned. Use ConfigService instead.',
+        },
       ],
     },
   },
   {
-    ignores: ['node_modules', 'dist', 'public', '.storybook', 'coverage', 'eslint.config.js', 'commitlint.config.js', 'tailwind.config.js', 'postcss.config.js', 'vite.config.ts', 'vitest.config.ts', 'playwright.config.ts'],
+    ignores: [
+      'node_modules',
+      'dist',
+      'storybook-static',
+      'playwright-report',
+      'test-results',
+      'public',
+      '.storybook',
+      'coverage',
+      'eslint.config.js',
+      'commitlint.config.js',
+      'tailwind.config.js',
+      'postcss.config.js',
+      'vite.config.ts',
+      'vitest.config.ts',
+      'playwright.config.ts',
+    ],
   },
-  ...storybook.configs['flat/recommended']
+  {
+    files: ['src/core/config/ConfigService.ts'],
+    rules: {
+      'no-restricted-syntax': 'off',
+    },
+  },
+  {
+    files: ['scripts/**/*.js'],
+    languageOptions: {
+      globals: {
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+      '@typescript-eslint/no-unsafe-argument': 'off',
+    },
+  },
+  ...storybook.configs['flat/recommended'],
 );

@@ -7,6 +7,7 @@ export interface IEditorAdapterProps {
   onBlur?: () => void;
   placeholder?: string;
   className?: string;
+  'aria-label'?: string;
 }
 
 export type IEditorAdapter = React.FC<IEditorAdapterProps>;

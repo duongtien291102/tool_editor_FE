@@ -39,8 +39,8 @@ describe('Logger', () => {
 
   it('should successfully switch transports and use ConsoleTransport', () => {
     const consoleTransport = new ConsoleTransport();
-    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    
+    const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+
     const swappableLogger = new Logger('SwapContext', LogLevel.WARN);
     swappableLogger.addTransport(consoleTransport);
 

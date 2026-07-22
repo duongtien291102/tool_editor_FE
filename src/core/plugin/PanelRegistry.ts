@@ -29,6 +29,10 @@ class PanelRegistry {
     return this.panels.get(id);
   }
 
+  unregister(id: string): boolean {
+    return this.panels.delete(id);
+  }
+
   getAllPanels(): PanelDefinition[] {
     return Array.from(this.panels.values());
   }

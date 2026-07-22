@@ -1,4 +1,5 @@
 import type { IJsonModel } from 'flexlayout-react';
+import { appLogger } from '@/core/logger';
 
 export interface ILayoutStorage {
   save(model: IJsonModel): void;
@@ -20,8 +21,8 @@ export class LocalStorageLayoutAdapter implements ILayoutStorage {
     try {
       const stored = localStorage.getItem(this.key);
       if (stored) return JSON.parse(stored) as IJsonModel;
-    } catch (e) {
-      console.error('Failed to load layout from local storage', e);
+    } catch (error: unknown) {
+      appLogger.error('Failed to load layout from local storage', { error });
     }
     return null;
   }

@@ -22,9 +22,10 @@ class ConfigService {
   public getApiBaseUrl(): string {
     const configuredUrl: unknown =
       import.meta.env.VITE_API_URL ?? import.meta.env.VITE_API_BASE_URL;
-    return typeof configuredUrl === 'string' && configuredUrl.length > 0
-      ? configuredUrl.replace(/\/$/, '')
-      : 'http://localhost:8080';
+    if (typeof configuredUrl === 'string' && configuredUrl.length > 0) {
+      return configuredUrl.replace(/\/$/, '');
+    }
+    return this.isDevelopment() ? 'http://localhost:8080' : 'https://tool-editor-be.onrender.com';
   }
 }
 

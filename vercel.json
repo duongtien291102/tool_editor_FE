@@ -3,7 +3,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://tool-editor-be-gamma.vercel.app/api/:path*"
+      "destination": "https://tool-editor-be.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

@@ -1,4 +1,10 @@
 {
   "title": "Quản lý dự án",
-  "loading": "Đang tải dự án..."
+  "loading": "Đang tải dự án...",
+  "newProject": "Tạo dự án mới",
+  "renameProject": "Đổi tên dự án",
+  "deleteProject": "Xóa dự án",
+  "promptName": "Tên dự án",
+  "confirmDelete": "Bạn có chắc chắn muốn xóa dự án này?",
+  "noProjects": "Chưa có dự án nào"
 }

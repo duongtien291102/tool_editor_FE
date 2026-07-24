@@ -21,11 +21,11 @@ export const SceneList: React.FC = () => {
           type="button"
           className="text-xs text-primary"
           onClick={() => {
-            const name = window.prompt('Scene name');
+            const name = window.prompt(t('editor.sceneTitlePlaceholder'));
             if (name?.trim()) void addScene(name.trim());
           }}
         >
-          Add scene
+          {t('panel.addScene')}
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
@@ -67,10 +67,10 @@ export const SceneList: React.FC = () => {
                 className="text-destructive"
                 aria-label={`Delete scene ${scene.title}`}
                 onClick={() => {
-                  if (window.confirm(`Delete scene “${scene.title}”?`)) void deleteScene(scene.id);
+                  if (window.confirm(t('panel.confirmDelete'))) void deleteScene(scene.id);
                 }}
               >
-                Delete
+                {t('panel.deleteScene')}
               </button>
             </div>
           </div>

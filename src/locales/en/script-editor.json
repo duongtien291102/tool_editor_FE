@@ -1,4 +1,18 @@
 {
+  "panel": {
+    "selectProject": "Select a project to edit scripts.",
+    "noScriptSelected": "No script selected",
+    "createScript": "Create script",
+    "renameScript": "Rename script",
+    "deleteScript": "Delete script",
+    "scriptDescription": "Script description",
+    "createOrSelectScript": "Create or select a script.",
+    "promptName": "Script name",
+    "confirmDelete": "Are you sure you want to delete this script?",
+    "addScene": "Add scene",
+    "addElement": "Add element",
+    "deleteScene": "Delete"
+  },
   "toolbar": {
     "undo": "Undo",
     "redo": "Redo"

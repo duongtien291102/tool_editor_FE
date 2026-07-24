@@ -21,18 +21,18 @@ export const ProjectExplorer: React.FC = () => {
   }, [fetchWorkspaceData]);
 
   const create = () => {
-    const name = window.prompt('Project name');
+    const name = window.prompt(t('promptName'));
     if (name?.trim()) void createProject(name.trim());
   };
   const rename = () => {
     const project = projects.find((item) => item.id === currentProjectId);
     if (!project) return;
-    const name = window.prompt('Project name', project.name);
+    const name = window.prompt(t('promptName'), project.name);
     if (name?.trim() && name.trim() !== project.name) void renameProject(project.id, name.trim());
   };
   const remove = () => {
     const project = projects.find((item) => item.id === currentProjectId);
-    if (project && window.confirm(`Delete “${project.name}”?`)) void deleteProject(project.id);
+    if (project && window.confirm(t('confirmDelete'))) void deleteProject(project.id);
   };
 
   return (
@@ -45,7 +45,7 @@ export const ProjectExplorer: React.FC = () => {
           <button
             type="button"
             className="px-1.5 hover:bg-accent rounded"
-            title="New project"
+            title={t('newProject')}
             onClick={create}
           >
             +
@@ -53,7 +53,7 @@ export const ProjectExplorer: React.FC = () => {
           <button
             type="button"
             className="px-1.5 hover:bg-accent rounded disabled:opacity-40"
-            title="Rename project"
+            title={t('renameProject')}
             disabled={!currentProjectId}
             onClick={rename}
           >
@@ -62,7 +62,7 @@ export const ProjectExplorer: React.FC = () => {
           <button
             type="button"
             className="px-1.5 hover:bg-accent rounded disabled:opacity-40"
-            title="Delete project"
+            title={t('deleteProject')}
             disabled={!currentProjectId}
             onClick={remove}
           >
@@ -86,7 +86,7 @@ export const ProjectExplorer: React.FC = () => {
             </button>
           ))
         ) : (
-          <div className="px-4 text-xs text-muted-foreground">No projects</div>
+          <div className="px-4 text-xs text-muted-foreground">{t('noProjects')}</div>
         )}
         {error && (
           <div role="alert" className="px-4 pt-2 text-xs text-destructive">

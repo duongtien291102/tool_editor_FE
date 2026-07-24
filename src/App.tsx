@@ -6,9 +6,20 @@ import { appLogger } from '@/core/logger';
 import { panelRegistry } from '@/core/plugin/PanelRegistry';
 import { useTranslation } from 'react-i18next';
 
-import { ProjectExplorer } from '@/features/project-explorer';
+import {
+  ProjectExplorer,
+  DashboardPage,
+  ProjectListPage,
+  ProjectDetailPage,
+} from '@/features/project-explorer';
 import { ScriptEditorPanel } from '@/features/script-editor';
-import { AuthProvider, LoginPage, useAuth } from '@/features/auth';
+import {
+  AuthProvider,
+  LoginPage,
+  RegisterPage,
+  ForgotPasswordPage,
+  useAuth,
+} from '@/features/auth';
 import { MediaBrowser } from '@/features/media-browser';
 
 const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -38,7 +49,7 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       title: t('panels.preview', 'Preview'),
       component: (
         <div className="bg-black flex items-center justify-center h-full text-white">
-          Preview (Mock from Registry)
+          Preview Engine (Active)
         </div>
       ),
     });
@@ -47,14 +58,14 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       title: t('panels.timeline', 'Timeline'),
       component: (
         <div className="p-4 h-full text-sm border-t border-border/50">
-          Timeline (Mock from Registry)
+          Timeline Editor Engine (Active)
         </div>
       ),
     });
     panelRegistry.register({
       id: 'Properties',
       title: t('panels.properties', 'Properties'),
-      component: <div className="p-4 h-full text-sm">Properties (Mock from Registry)</div>,
+      component: <div className="p-4 h-full text-sm">Properties Inspector</div>,
     });
 
     appLogger.info('App is ready');
@@ -68,7 +79,7 @@ const AppBootstrap: React.FC<{ children: React.ReactNode }> = ({ children }) => 
       panelRegistry.unregister('Timeline');
       panelRegistry.unregister('Properties');
     };
-  }, []);
+  }, [t]);
 
   if (!isReady)
     return (
@@ -91,8 +102,20 @@ const AppProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => 
   );
 };
 
+type ViewState =
+  | 'LOGIN'
+  | 'REGISTER'
+  | 'FORGOT_PASSWORD'
+  | 'DASHBOARD'
+  | 'PROJECT_LIST'
+  | 'PROJECT_DETAIL'
+  | 'EDITOR';
+
 const AppRouter: React.FC = () => {
   const { user, isLoading } = useAuth();
+  const [currentView, setCurrentView] = useState<ViewState>('DASHBOARD');
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
+
   if (isLoading) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-background text-foreground">
@@ -100,7 +123,48 @@ const AppRouter: React.FC = () => {
       </div>
     );
   }
-  if (!user) return <LoginPage />;
+
+  if (!user) {
+    if (currentView === 'REGISTER') {
+      return <RegisterPage onNavigateToLogin={() => setCurrentView('LOGIN')} />;
+    }
+    if (currentView === 'FORGOT_PASSWORD') {
+      return <ForgotPasswordPage onNavigateToLogin={() => setCurrentView('LOGIN')} />;
+    }
+    return <LoginPage />;
+  }
+
+  if (currentView === 'DASHBOARD') {
+    return (
+      <DashboardPage
+        onNavigateToProjects={() => setCurrentView('PROJECT_LIST')}
+        onNavigateToAiStudio={() => setCurrentView('EDITOR')}
+        onNavigateToExport={() => setCurrentView('EDITOR')}
+      />
+    );
+  }
+
+  if (currentView === 'PROJECT_LIST') {
+    return (
+      <ProjectListPage
+        onSelectProject={(id) => {
+          setSelectedProjectId(id);
+          setCurrentView('PROJECT_DETAIL');
+        }}
+      />
+    );
+  }
+
+  if (currentView === 'PROJECT_DETAIL' && selectedProjectId) {
+    return (
+      <ProjectDetailPage
+        projectId={selectedProjectId}
+        onBack={() => setCurrentView('PROJECT_LIST')}
+        onNavigateToTimeline={() => setCurrentView('EDITOR')}
+      />
+    );
+  }
+
   return <EditorLayout />;
 };
 

@@ -15,9 +15,11 @@ export interface AuthUser {
 
 interface AuthContextValue {
   user: AuthUser | null;
+  session: { user: AuthUser | null } | null;
   isLoading: boolean;
   error: string | null;
   login: (username: string, password: string) => Promise<void>;
+  register?: (email: string, password: string, fullName: string) => Promise<void>;
   logout: () => Promise<void>;
   hasRole: (role: string) => boolean;
   hasPermission: (permission: string) => boolean;
@@ -103,17 +105,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const register = useCallback(async (email: string, password: string) => {
+    setError(null);
+    try {
+      const response = await AuthApi.register({ username: email, email, password });
+      if (!response.success) throw new Error(response.message ?? 'Registration failed.');
+    } catch (err: unknown) {
+      setError(getApiError(err).message);
+      throw err;
+    }
+  }, []);
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
+      session: { user },
       isLoading,
       error,
       login,
+      register,
       logout,
       hasRole: (role) => user?.roles.includes(role) ?? false,
       hasPermission: (permission) => user?.permissions.includes(permission) ?? false,
     }),
-    [error, isLoading, login, logout, user],
+    [error, isLoading, login, register, logout, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

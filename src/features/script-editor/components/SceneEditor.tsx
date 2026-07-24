@@ -81,7 +81,7 @@ export const SceneEditor: React.FC = () => {
                 void addElement(scene.id);
               }}
             >
-              Add element
+              {t('panel.addElement')}
             </button>
           </div>
           {scene.elements.map((el) => (
@@ -96,10 +96,11 @@ export const SceneEditor: React.FC = () => {
                   className="text-[10px] text-destructive"
                   aria-label={`Delete element ${el.id}`}
                   onClick={() => {
-                    if (window.confirm('Delete this element?')) void deleteElement(scene.id, el.id);
+                    if (window.confirm(t('panel.confirmDelete')))
+                      void deleteElement(scene.id, el.id);
                   }}
                 >
-                  Delete
+                  {t('panel.deleteScene')}
                 </button>
               </div>
               <Editor

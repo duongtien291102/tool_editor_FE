@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCurrentProject } from '@/features/workspace';
 import { useScriptStore } from '../store/scriptStore';
 import { SceneList } from './SceneList';
@@ -6,6 +7,7 @@ import { SceneEditor } from './SceneEditor';
 import { StatusBar } from './StatusBar';
 
 export const ScriptEditorPanel: React.FC = () => {
+  const { t } = useTranslation('scriptEditor');
   const { currentProjectId } = useCurrentProject();
   const fetchProjectScripts = useScriptStore((state) => state.fetchProjectScripts);
   const loading = useScriptStore((state) => state.loading);
@@ -25,7 +27,7 @@ export const ScriptEditorPanel: React.FC = () => {
   if (!currentProjectId) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        Select a project to edit scripts.
+        {t('panel.selectProject')}
       </div>
     );
   }
@@ -33,7 +35,7 @@ export const ScriptEditorPanel: React.FC = () => {
   if (loading) {
     return (
       <div className="h-full flex items-center justify-center text-muted-foreground">
-        Loading...
+        {t('status.saving')}
       </div>
     );
   }
@@ -42,14 +44,14 @@ export const ScriptEditorPanel: React.FC = () => {
     <div className="flex flex-col h-full w-full bg-background overflow-hidden">
       <header className="h-10 border-b border-border flex items-center gap-2 px-2 shrink-0">
         <select
-          aria-label="Open script"
+          aria-label={t('panel.noScriptSelected')}
           className="min-w-0 flex-1 h-7 rounded border border-input bg-background px-2 text-xs"
           value={script?.id ?? ''}
           onChange={(event) => {
             if (event.target.value) void openScript(event.target.value);
           }}
         >
-          <option value="">No script selected</option>
+          <option value="">{t('panel.noScriptSelected')}</option>
           {scripts.map((item) => (
             <option key={item.id} value={item.id}>
               {item.title}
@@ -60,41 +62,41 @@ export const ScriptEditorPanel: React.FC = () => {
           type="button"
           className="h-7 px-2 rounded bg-primary text-primary-foreground text-xs"
           onClick={() => {
-            const name = window.prompt('Script name');
+            const name = window.prompt(t('panel.promptName'));
             if (name?.trim()) void createScript(name.trim());
           }}
         >
-          Create script
+          {t('panel.createScript')}
         </button>
         <button
           type="button"
           className="h-7 px-2 rounded border border-border text-xs"
           disabled={!script}
           onClick={() => {
-            const name = window.prompt('Script name', script?.title);
+            const name = window.prompt(t('panel.promptName'), script?.title);
             if (name?.trim()) void renameScript(name.trim());
           }}
         >
-          Rename script
+          {t('panel.renameScript')}
         </button>
         <button
           type="button"
           className="h-7 px-2 text-destructive text-xs"
           disabled={!script}
           onClick={() => {
-            if (window.confirm(`Delete “${script?.title ?? 'script'}”?`)) void deleteScript();
+            if (window.confirm(t('panel.confirmDelete'))) void deleteScript();
           }}
         >
-          Delete script
+          {t('panel.deleteScript')}
         </button>
       </header>
       {script && (
         <div className="px-2 py-1 border-b border-border">
           <input
-            aria-label="Script description"
+            aria-label={t('panel.scriptDescription')}
             className="w-full h-7 rounded border border-input bg-background px-2 text-xs"
             value={script.description}
-            placeholder="Script description"
+            placeholder={t('panel.scriptDescription')}
             onChange={(event) =>
               updateScript({ ...structuredClone(script), description: event.target.value })
             }
@@ -108,7 +110,7 @@ export const ScriptEditorPanel: React.FC = () => {
       )}
       {!script ? (
         <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground">
-          Create or select a script.
+          {t('panel.createOrSelectScript')}
         </div>
       ) : (
         <>

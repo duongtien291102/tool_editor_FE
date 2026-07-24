@@ -1,4 +1,18 @@
 {
+  "panel": {
+    "selectProject": "Vui lòng chọn một dự án để chỉnh sửa kịch bản.",
+    "noScriptSelected": "Chưa chọn kịch bản nào",
+    "createScript": "Tạo kịch bản",
+    "renameScript": "Đổi tên",
+    "deleteScript": "Xóa kịch bản",
+    "scriptDescription": "Mô tả kịch bản",
+    "createOrSelectScript": "Tạo mới hoặc chọn một kịch bản để bắt đầu.",
+    "promptName": "Tên kịch bản",
+    "confirmDelete": "Bạn có chắc chắn muốn xóa kịch bản này?",
+    "addScene": "Thêm cảnh",
+    "addElement": "Thêm thành phần",
+    "deleteScene": "Xóa"
+  },
   "toolbar": {
     "undo": "Hoàn tác",
     "redo": "Làm lại"

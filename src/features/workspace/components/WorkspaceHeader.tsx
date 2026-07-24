@@ -3,12 +3,21 @@ import { useTranslation } from 'react-i18next';
 import { useWorkspace } from '../hooks/useWorkspace';
 import { useCurrentProject } from '../hooks/useCurrentProject';
 import { useAuth } from '@/features/auth';
+import { settingsService } from '@/services/settings/SettingsService';
 
 export const WorkspaceHeader: React.FC = () => {
-  const { t } = useTranslation('workspace');
+  const { t, i18n } = useTranslation('workspace');
   const { fetchWorkspaceData } = useWorkspace();
   const { currentProject } = useCurrentProject();
   const { user, logout } = useAuth();
+
+  const currentLang = i18n.language?.startsWith('vi') ? 'vi' : 'en';
+
+  const toggleLanguage = () => {
+    const nextLang = currentLang === 'vi' ? 'en' : 'vi';
+    void i18n.changeLanguage(nextLang);
+    settingsService.saveSettings({ language: nextLang });
+  };
 
   useEffect(() => {
     void fetchWorkspaceData();
@@ -57,8 +66,16 @@ export const WorkspaceHeader: React.FC = () => {
         </div>
       </div>
 
-      {/* RIGHT: Export, Settings, User */}
+      {/* RIGHT: Language Switcher, Export, Settings, User */}
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          className="h-7 px-2 rounded border border-border text-xs font-bold bg-muted hover:bg-accent text-foreground transition-colors flex items-center gap-1"
+          title="Chuyển đổi ngôn ngữ / Switch language"
+          onClick={toggleLanguage}
+        >
+          🌐 {currentLang.toUpperCase()}
+        </button>
         <div
           className="h-8 w-8 rounded flex items-center justify-center hover:bg-accent text-muted-foreground cursor-pointer font-bold text-xs"
           title={t('header.settings')}

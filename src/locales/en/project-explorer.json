@@ -1,4 +1,10 @@
 {
   "title": "Project Explorer",
-  "loading": "Loading project..."
+  "loading": "Loading projects...",
+  "newProject": "New project",
+  "renameProject": "Rename project",
+  "deleteProject": "Delete project",
+  "promptName": "Project name",
+  "confirmDelete": "Are you sure you want to delete this project?",
+  "noProjects": "No projects"
 }

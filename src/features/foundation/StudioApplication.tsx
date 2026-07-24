@@ -79,7 +79,7 @@ import { AiProvidersScreen } from '@/features/ai-providers';
 import { CommercialScreen, type CommercialTab } from '@/features/commercial';
 import { GenerationScreen } from '@/features/generation';
 import { AdminConsoleScreen, type AdminTab } from '@/features/admin';
-import { CreditCard, WandSparkles, ShieldCheck } from 'lucide-react';
+import { CreditCard, ShieldCheck } from 'lucide-react';
 
 type Route =
   | { name: 'login' }

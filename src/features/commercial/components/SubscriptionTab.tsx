@@ -1,5 +1,5 @@
 import React from 'react';
-import { UserSubscription, PlanPolicy } from '../types';
+import type { UserSubscription, PlanPolicy } from '../types';
 
 interface SubscriptionTabProps {
   subscription: UserSubscription;

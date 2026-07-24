@@ -1,7 +1,6 @@
 import {
   Activity,
   Calculator,
-  CheckCircle2,
   Cpu,
   KeyRound,
   RefreshCw,
@@ -104,7 +103,7 @@ export function AiProvidersScreen() {
     },
   ) => {
     try {
-      const updated = await aiProviderService.updateProvider(providerName, changes);
+      await aiProviderService.updateProvider(providerName, changes);
       await loadProviders();
       notify(`${providerName} configuration and secret binding saved`);
     } catch {

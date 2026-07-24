@@ -1,5 +1,5 @@
 import React from 'react';
-import { UsageRecord } from '../types';
+import type { UsageRecord } from '../types';
 
 interface UsageTabProps {
   usage: UsageRecord[];

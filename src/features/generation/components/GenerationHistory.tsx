@@ -1,5 +1,5 @@
 import React from 'react';
-import { GenerationSession } from '../types';
+import type { GenerationSession } from '../types';
 
 interface GenerationHistoryProps {
   sessions: GenerationSession[];

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { generationService } from '../services/generationService';
-import { GenerationSession, GenerationStepArtifact } from '../types';
+import type { GenerationSession, GenerationStepArtifact } from '../types';
 import { GenerationWizard } from './GenerationWizard';
 import { GenerationHistory } from './GenerationHistory';
 import { SessionDetailModal } from './SessionDetailModal';

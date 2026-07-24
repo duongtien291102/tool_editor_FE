@@ -1,5 +1,5 @@
 import React from 'react';
-import { SystemMetrics } from '../types';
+import type { SystemMetrics } from '../types';
 
 interface MetricsDashboardTabProps {
   metrics: SystemMetrics | null;

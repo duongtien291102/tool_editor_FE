@@ -1,5 +1,5 @@
 import React from 'react';
-import { GenerationSession, GenerationStepArtifact } from '../types';
+import type { GenerationSession, GenerationStepArtifact } from '../types';
 
 interface SessionDetailModalProps {
   session: GenerationSession | null;

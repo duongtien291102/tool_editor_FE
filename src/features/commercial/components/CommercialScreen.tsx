@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { commercialService } from '../services/commercialService';
-import {
+import type {
   UserProfile,
   UserSubscription,
   UserWallet,

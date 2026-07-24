@@ -1,5 +1,5 @@
 import React from 'react';
-import { CreditPackage, UserWallet } from '../types';
+import type { CreditPackage, UserWallet } from '../types';
 
 interface CreditsTabProps {
   wallet: UserWallet;

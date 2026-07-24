@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { generationService } from '../services/generationService';
-import { GenerationSession, GenerationStepArtifact } from '../types';
+import type { GenerationSession, GenerationStepArtifact } from '../types';
 
 interface GenerationWizardProps {
   onGenerationComplete?: (session: GenerationSession) => void;

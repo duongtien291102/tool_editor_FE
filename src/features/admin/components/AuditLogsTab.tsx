@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AuditLogEntry } from '../types';
+import type { AuditLogEntry } from '../types';
 
 interface AuditLogsTabProps {
   logs: AuditLogEntry[];

@@ -1,5 +1,5 @@
 import React from 'react';
-import { SystemHealthReport } from '../types';
+import type { SystemHealthReport } from '../types';
 
 interface SystemHealthTabProps {
   health: SystemHealthReport | null;

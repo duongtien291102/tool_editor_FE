@@ -1,5 +1,5 @@
 import React from 'react';
-import { FeatureFlag } from '../types';
+import type { FeatureFlag } from '../types';
 
 interface FeatureFlagsTabProps {
   flags: FeatureFlag[];

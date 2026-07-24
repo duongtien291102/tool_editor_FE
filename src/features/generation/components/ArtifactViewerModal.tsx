@@ -1,5 +1,5 @@
 import React from 'react';
-import { GenerationStepArtifact } from '../types';
+import type { GenerationStepArtifact } from '../types';
 
 interface ArtifactViewerModalProps {
   artifact: GenerationStepArtifact | null;

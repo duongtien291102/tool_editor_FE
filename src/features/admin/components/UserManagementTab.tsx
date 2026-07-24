@@ -1,5 +1,5 @@
 import React from 'react';
-import { AdminUserSummary } from '../types';
+import type { AdminUserSummary } from '../types';
 
 interface UserManagementTabProps {
   users: AdminUserSummary[];

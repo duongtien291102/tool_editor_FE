@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlanPolicy, PlanTier } from '../types';
+import type { PlanPolicy, PlanTier } from '../types';
 
 interface PricingTabProps {
   policies: PlanPolicy[];

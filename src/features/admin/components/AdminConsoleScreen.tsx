@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminService } from '../services/adminService';
-import { AdminUserSummary, AuditLogEntry, FeatureFlag, SystemHealthReport, SystemMetrics } from '../types';
+import type { AdminUserSummary, AuditLogEntry, FeatureFlag, SystemHealthReport, SystemMetrics } from '../types';
 import { MetricsDashboardTab } from './MetricsDashboardTab';
 import { SystemHealthTab } from './SystemHealthTab';
 import { AuditLogsTab } from './AuditLogsTab';

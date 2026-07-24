@@ -1,4 +1,4 @@
-import { GenerationSession, GenerationStepArtifact } from '../types';
+import type { GenerationSession, GenerationStepArtifact } from '../types';
 
 class GenerationService {
   private sessionsMock: GenerationSession[] = [
@@ -231,7 +231,7 @@ class GenerationService {
       stepName: 'AI Concept Analysis',
       fileName: 'Idea.md',
       contentType: 'text/markdown',
-      fileSizeBytes: ideaContent.Length || 400,
+      fileSizeBytes: ideaContent.length || 400,
       contentUrl: `https://ai-studio.local/artifacts/${session.id}/Idea.md`,
       rawContent: ideaContent,
       createdAt: new Date().toISOString()

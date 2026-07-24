@@ -1,5 +1,5 @@
 import React from 'react';
-import { Invoice, CreditTransaction } from '../types';
+import type { Invoice, CreditTransaction } from '../types';
 
 interface InvoicesTabProps {
   invoices: Invoice[];

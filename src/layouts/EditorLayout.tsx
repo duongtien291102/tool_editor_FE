@@ -6,6 +6,62 @@ import { useTranslation } from 'react-i18next';
 import { panelRegistry } from '@/core/plugin/PanelRegistry';
 import { defaultLayoutStorage } from '@/layouts/LayoutStorage';
 import { GlobalErrorBoundary } from '@/components/ui/GlobalErrorBoundary';
+import { ProjectExplorer } from '@/features/project-explorer';
+import { MediaBrowser } from '@/features/media-browser';
+import { ScriptEditorPanel } from '@/features/script-editor';
+import { TimelinePanel } from '@/features/timeline';
+import { GenerateScriptPanel } from '@/features/ai-tools';
+
+// Register core studio panels in panel registry
+panelRegistry.register({
+  id: 'ProjectExplorer',
+  title: 'Project Explorer',
+  component: <ProjectExplorer />,
+});
+
+panelRegistry.register({
+  id: 'MediaBrowser',
+  title: 'Media',
+  component: <MediaBrowser />,
+});
+
+panelRegistry.register({
+  id: 'ScriptEditor',
+  title: 'Script Editor',
+  component: <ScriptEditorPanel />,
+});
+
+panelRegistry.register({
+  id: 'Timeline',
+  title: 'Timeline',
+  component: <TimelinePanel />,
+});
+
+panelRegistry.register({
+  id: 'GenerateScript',
+  title: 'Generate Script',
+  component: <GenerateScriptPanel />,
+});
+
+panelRegistry.register({
+  id: 'Preview',
+  title: 'Preview',
+  component: (
+    <div className="p-4 text-xs text-muted-foreground flex items-center justify-center h-full bg-panel">
+      Canvas Preview Window
+    </div>
+  ),
+});
+
+panelRegistry.register({
+  id: 'Properties',
+  title: 'Properties',
+  component: (
+    <div className="p-4 text-xs text-muted-foreground flex items-center justify-center h-full bg-panel">
+      Properties Panel
+    </div>
+  ),
+});
 
 const getDefaultLayout = (t: (key: string) => string): IJsonModel => ({
   global: {
@@ -17,15 +73,16 @@ const getDefaultLayout = (t: (key: string) => string): IJsonModel => ({
     children: [
       {
         type: 'tabset',
-        weight: 20,
+        weight: 25,
         children: [
+          { type: 'tab', name: 'Generate Script', component: 'GenerateScript' },
           { type: 'tab', name: t('panels.projectExplorer'), component: 'ProjectExplorer' },
           { type: 'tab', name: 'Media', component: 'MediaBrowser' },
         ],
       },
       {
         type: 'row',
-        weight: 60,
+        weight: 55,
         children: [
           {
             type: 'tabset',
@@ -54,10 +111,8 @@ const getDefaultLayout = (t: (key: string) => string): IJsonModel => ({
 export const EditorLayout: React.FC = () => {
   const { t } = useTranslation('common');
   const [model, setModel] = useState<Model | null>(null);
+
   useEffect(() => {
-    // Force recreate model on translation change or first load
-    // Normally you'd merge translations, but for simplicity we reload default if no save
-    // To ensure new panel appears, we will use default layout for this sprint
     setModel(Model.fromJson(getDefaultLayout(t)));
   }, [t]);
 

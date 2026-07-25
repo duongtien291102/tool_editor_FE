@@ -27,6 +27,14 @@ class ConfigService {
     }
     return this.isDevelopment() ? 'http://localhost:8080' : 'https://tool-editor-be.onrender.com';
   }
+
+  public getGeminiApiKey(): string {
+    const key: unknown = import.meta.env.VITE_GEMINI_API_KEY ?? import.meta.env.GEMINI_API_KEY;
+    if (typeof key === 'string' && key.length > 0) {
+      return key;
+    }
+    return '';
+  }
 }
 
 export const configService = new ConfigService();

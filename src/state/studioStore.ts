@@ -46,6 +46,36 @@ export interface AssetRecord {
   size: string;
   duration?: string;
   color: string;
+  contentUrl?: string;
+  thumbnailUrl?: string;
+  source?: 'Pexels';
+  attribution?: {
+    photographer: string;
+    sourceUrl: string;
+  };
+}
+
+export interface ImportedTimelineClip {
+  id: string;
+  projectId: string;
+  assetId: string;
+  name: string;
+  kind: Extract<AssetKind, 'Image' | 'Video'>;
+  durationSeconds: number;
+  thumbnailUrl: string;
+}
+
+export interface ImportedStockAsset {
+  assetId: string;
+  projectId: string;
+  mediaType: 'photo' | 'video';
+  name: string;
+  contentUrl: string;
+  thumbnailUrl: string;
+  sizeBytes: number;
+  durationSeconds: number | null;
+  photographer: string;
+  sourceUrl: string;
 }
 
 export interface JobRecord {
@@ -101,6 +131,7 @@ interface StudioState {
   projects: ProjectRecord[];
   currentProjectId: string | null;
   assets: AssetRecord[];
+  importedTimelineClips: ImportedTimelineClip[];
   jobs: JobRecord[];
   renders: RenderRecord[];
   providers: ProviderRecord[];
@@ -112,11 +143,17 @@ interface StudioState {
   logout: () => void;
   createWorkspace: (name: string) => WorkspaceRecord;
   selectWorkspace: (id: string) => void;
-  createProject: (input: Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>) => ProjectRecord | null;
-  updateProject: (id: string, changes: Partial<Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>>) => void;
+  createProject: (
+    input: Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>,
+  ) => ProjectRecord | null;
+  updateProject: (
+    id: string,
+    changes: Partial<Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>>,
+  ) => void;
   archiveProject: (id: string) => void;
   selectProject: (id: string) => void;
   retryJob: (id: string) => void;
+  addImportedStockAsset: (asset: ImportedStockAsset) => void;
   setEditor: (changes: Partial<EditorState>) => void;
   setUi: (changes: Partial<UiState>) => void;
   setFeatureFlag: (key: string, enabled: boolean) => void;
@@ -126,6 +163,12 @@ interface StudioState {
 
 const now = () => new Date().toISOString();
 const id = (prefix: string) => `${prefix}-${crypto.randomUUID()}`;
+const formatBytes = (bytes: number) =>
+  bytes >= 1024 * 1024
+    ? `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+    : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+const formatDuration = (seconds: number) =>
+  `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
 const initialWorkspaces: WorkspaceRecord[] = [
   { id: 'ws-studio', name: 'Northstar Studio', ownerId: 'user-demo', createdAt: now() },
@@ -166,33 +209,182 @@ const initialProjects: ProjectRecord[] = [
 ];
 
 const initialAssets: AssetRecord[] = [
-  { id: 'asset-1', workspaceId: 'ws-studio', projectId: 'project-atlas', folder: 'Footage', name: 'city-dawn-master.mov', kind: 'Video', size: '184 MB', duration: '00:18', color: '#31596f' },
-  { id: 'asset-2', workspaceId: 'ws-studio', projectId: 'project-atlas', folder: 'Footage', name: 'product-turntable.mp4', kind: 'Video', size: '92 MB', duration: '00:12', color: '#6b5140' },
-  { id: 'asset-3', workspaceId: 'ws-studio', projectId: 'project-atlas', folder: 'References', name: 'material-reference.jpg', kind: 'Image', size: '3.8 MB', color: '#665f52' },
-  { id: 'asset-4', workspaceId: 'ws-studio', projectId: 'project-atlas', folder: 'Audio', name: 'pulse-score.wav', kind: 'Audio', size: '36 MB', duration: '01:24', color: '#445f55' },
-  { id: 'asset-5', workspaceId: 'ws-studio', folder: 'Shared', name: 'studio-logo.png', kind: 'Image', size: '820 KB', color: '#314d5a' },
-  { id: 'asset-6', workspaceId: 'ws-lab', projectId: 'project-archive', folder: 'References', name: 'surface-study-02.jpg', kind: 'Image', size: '2.1 MB', color: '#555c65' },
+  {
+    id: 'asset-1',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    folder: 'Footage',
+    name: 'city-dawn-master.mov',
+    kind: 'Video',
+    size: '184 MB',
+    duration: '00:18',
+    color: '#31596f',
+  },
+  {
+    id: 'asset-2',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    folder: 'Footage',
+    name: 'product-turntable.mp4',
+    kind: 'Video',
+    size: '92 MB',
+    duration: '00:12',
+    color: '#6b5140',
+  },
+  {
+    id: 'asset-3',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    folder: 'References',
+    name: 'material-reference.jpg',
+    kind: 'Image',
+    size: '3.8 MB',
+    color: '#665f52',
+  },
+  {
+    id: 'asset-4',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    folder: 'Audio',
+    name: 'pulse-score.wav',
+    kind: 'Audio',
+    size: '36 MB',
+    duration: '01:24',
+    color: '#445f55',
+  },
+  {
+    id: 'asset-5',
+    workspaceId: 'ws-studio',
+    folder: 'Shared',
+    name: 'studio-logo.png',
+    kind: 'Image',
+    size: '820 KB',
+    color: '#314d5a',
+  },
+  {
+    id: 'asset-6',
+    workspaceId: 'ws-lab',
+    projectId: 'project-archive',
+    folder: 'References',
+    name: 'surface-study-02.jpg',
+    kind: 'Image',
+    size: '2.1 MB',
+    color: '#555c65',
+  },
 ];
 
 const initialJobs: JobRecord[] = [
-  { id: 'job-01', workspaceId: 'ws-studio', projectId: 'project-atlas', type: 'Asset ingest', subject: 'city-dawn-master.mov', status: 'Success', progress: 100, createdAt: '2026-07-25T01:04:00.000Z' },
-  { id: 'job-02', workspaceId: 'ws-studio', projectId: 'project-atlas', type: 'Proxy', subject: 'product-turntable.mp4', status: 'Running', progress: 68, createdAt: '2026-07-25T01:12:00.000Z' },
-  { id: 'job-03', workspaceId: 'ws-studio', projectId: 'project-kinetic', type: 'Thumbnail', subject: 'social-cut-v2.mov', status: 'Queued', progress: 0, createdAt: '2026-07-25T01:16:00.000Z' },
-  { id: 'job-04', workspaceId: 'ws-studio', projectId: 'project-atlas', type: 'Waveform', subject: 'pulse-score.wav', status: 'Failed', progress: 42, createdAt: '2026-07-24T17:28:00.000Z' },
+  {
+    id: 'job-01',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    type: 'Asset ingest',
+    subject: 'city-dawn-master.mov',
+    status: 'Success',
+    progress: 100,
+    createdAt: '2026-07-25T01:04:00.000Z',
+  },
+  {
+    id: 'job-02',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    type: 'Proxy',
+    subject: 'product-turntable.mp4',
+    status: 'Running',
+    progress: 68,
+    createdAt: '2026-07-25T01:12:00.000Z',
+  },
+  {
+    id: 'job-03',
+    workspaceId: 'ws-studio',
+    projectId: 'project-kinetic',
+    type: 'Thumbnail',
+    subject: 'social-cut-v2.mov',
+    status: 'Queued',
+    progress: 0,
+    createdAt: '2026-07-25T01:16:00.000Z',
+  },
+  {
+    id: 'job-04',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    type: 'Waveform',
+    subject: 'pulse-score.wav',
+    status: 'Failed',
+    progress: 42,
+    createdAt: '2026-07-24T17:28:00.000Z',
+  },
 ];
 
 const initialRenders: RenderRecord[] = [
-  { id: 'render-01', workspaceId: 'ws-studio', projectId: 'project-atlas', projectName: 'Atlas Brand Film', preset: '4K Master', status: 'Running', progress: 31, createdAt: '2026-07-25T01:20:00.000Z' },
-  { id: 'render-02', workspaceId: 'ws-studio', projectId: 'project-atlas', projectName: 'Atlas Brand Film', preset: 'Review 1080p', status: 'Success', progress: 100, createdAt: '2026-07-24T16:20:00.000Z' },
-  { id: 'render-03', workspaceId: 'ws-studio', projectId: 'project-kinetic', projectName: 'Kinetic Product Cut', preset: 'Vertical Preview', status: 'Failed', progress: 76, createdAt: '2026-07-23T10:03:00.000Z' },
+  {
+    id: 'render-01',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    projectName: 'Atlas Brand Film',
+    preset: '4K Master',
+    status: 'Running',
+    progress: 31,
+    createdAt: '2026-07-25T01:20:00.000Z',
+  },
+  {
+    id: 'render-02',
+    workspaceId: 'ws-studio',
+    projectId: 'project-atlas',
+    projectName: 'Atlas Brand Film',
+    preset: 'Review 1080p',
+    status: 'Success',
+    progress: 100,
+    createdAt: '2026-07-24T16:20:00.000Z',
+  },
+  {
+    id: 'render-03',
+    workspaceId: 'ws-studio',
+    projectId: 'project-kinetic',
+    projectName: 'Kinetic Product Cut',
+    preset: 'Vertical Preview',
+    status: 'Failed',
+    progress: 76,
+    createdAt: '2026-07-23T10:03:00.000Z',
+  },
 ];
 
 const providers: ProviderRecord[] = [
-  { id: 'openai', name: 'OpenAI', category: 'Multimodal', status: 'Available', capabilities: ['Registry only'] },
-  { id: 'gemini', name: 'Gemini', category: 'Multimodal', status: 'Available', capabilities: ['Registry only'] },
-  { id: 'veo', name: 'Veo', category: 'Video', status: 'Available', capabilities: ['Registry only'] },
-  { id: 'kling', name: 'Kling', category: 'Video', status: 'Disabled', capabilities: ['Registry only'] },
-  { id: 'runway', name: 'Runway', category: 'Video', status: 'Available', capabilities: ['Registry only'] },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    category: 'Multimodal',
+    status: 'Available',
+    capabilities: ['Registry only'],
+  },
+  {
+    id: 'gemini',
+    name: 'Gemini',
+    category: 'Multimodal',
+    status: 'Available',
+    capabilities: ['Registry only'],
+  },
+  {
+    id: 'veo',
+    name: 'Veo',
+    category: 'Video',
+    status: 'Available',
+    capabilities: ['Registry only'],
+  },
+  {
+    id: 'kling',
+    name: 'Kling',
+    category: 'Video',
+    status: 'Disabled',
+    capabilities: ['Registry only'],
+  },
+  {
+    id: 'runway',
+    name: 'Runway',
+    category: 'Video',
+    status: 'Available',
+    capabilities: ['Registry only'],
+  },
 ];
 
 export const useStudioStore = create<StudioState>()(
@@ -205,6 +397,7 @@ export const useStudioStore = create<StudioState>()(
       projects: initialProjects,
       currentProjectId: 'project-atlas',
       assets: initialAssets,
+      importedTimelineClips: [],
       jobs: initialJobs,
       renders: initialRenders,
       providers,
@@ -317,7 +510,8 @@ export const useStudioStore = create<StudioState>()(
           );
           return {
             projects,
-            currentProjectId: state.currentProjectId === projectId ? (next?.id ?? null) : state.currentProjectId,
+            currentProjectId:
+              state.currentProjectId === projectId ? (next?.id ?? null) : state.currentProjectId,
             ui: { ...state.ui, toast: 'Project archived' },
           };
         }),
@@ -329,6 +523,45 @@ export const useStudioStore = create<StudioState>()(
           ),
           ui: { ...state.ui, toast: 'Job queued for retry' },
         })),
+      addImportedStockAsset: (imported) =>
+        set((state) => {
+          const kind = imported.mediaType === 'photo' ? ('Image' as const) : ('Video' as const);
+          const asset: AssetRecord = {
+            id: imported.assetId,
+            workspaceId: state.currentWorkspaceId ?? 'ws-studio',
+            projectId: imported.projectId,
+            folder: 'Pexels',
+            name: imported.name,
+            kind,
+            size: formatBytes(imported.sizeBytes),
+            duration: imported.durationSeconds
+              ? formatDuration(imported.durationSeconds)
+              : undefined,
+            color: '#24353b',
+            contentUrl: imported.contentUrl,
+            thumbnailUrl: imported.thumbnailUrl,
+            source: 'Pexels',
+            attribution: {
+              photographer: imported.photographer,
+              sourceUrl: imported.sourceUrl,
+            },
+          };
+          const clip: ImportedTimelineClip = {
+            id: id('clip-pexels'),
+            projectId: imported.projectId,
+            assetId: imported.assetId,
+            name: imported.name,
+            kind,
+            durationSeconds: imported.durationSeconds ?? 5,
+            thumbnailUrl: imported.thumbnailUrl,
+          };
+          return {
+            assets: [asset, ...state.assets.filter((item) => item.id !== asset.id)],
+            importedTimelineClips: [...state.importedTimelineClips, clip],
+            editor: { ...state.editor, selectedClipId: clip.id },
+            ui: { ...state.ui, toast: 'Pexels asset imported and added to timeline' },
+          };
+        }),
       setEditor: (changes) => set((state) => ({ editor: { ...state.editor, ...changes } })),
       setUi: (changes) => set((state) => ({ ui: { ...state.ui, ...changes } })),
       setFeatureFlag: (key, enabled) =>
@@ -346,6 +579,7 @@ export const useStudioStore = create<StudioState>()(
         projects: state.projects,
         currentProjectId: state.currentProjectId,
         assets: state.assets,
+        importedTimelineClips: state.importedTimelineClips,
         jobs: state.jobs,
         renders: state.renders,
         featureFlags: state.featureFlags,

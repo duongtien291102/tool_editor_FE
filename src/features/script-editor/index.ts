@@ -5,4 +5,5 @@ export { SceneEditor } from './components/SceneEditor';
 export { ScriptEditorPanel } from './components/ScriptEditorPanel';
 export { scriptService } from './services/ScriptService';
 export { useScriptStore } from './store/scriptStore';
-export type { Script, Scene, SceneElement, ElementType, SaveStatus, ICommand } from './types';
+export { ElementType, SaveStatus } from './types';
+export type { Script, Scene, SceneElement, ICommand } from './types';

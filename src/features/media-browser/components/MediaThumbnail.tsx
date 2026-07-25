@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { MediaApi } from '@/api/MediaApi';
 
-export const MediaThumbnail: React.FC<{ id: string; available: boolean; name: string }> = ({
-  id,
-  available,
-  name,
-}) => {
+interface MediaThumbnailProps {
+  id: string;
+  available: boolean;
+  name: string;
+}
+
+const MediaThumbnailComponent: React.FC<MediaThumbnailProps> = ({ id, available, name }) => {
   const [url, setUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -36,3 +38,5 @@ export const MediaThumbnail: React.FC<{ id: string; available: boolean; name: st
     </div>
   );
 };
+
+export const MediaThumbnail = React.memo(MediaThumbnailComponent);

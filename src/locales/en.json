@@ -1,0 +1,289 @@
+{
+  "nav": {
+    "dashboard": "Production Overview",
+    "projects": "Projects",
+    "workspaces": "Workspaces",
+    "assets": "Asset Catalog",
+    "jobs": "Job Center",
+    "renders": "Render Center",
+    "providers": "AI Providers Integration",
+    "wizard": "AI Video Generation",
+    "commercial": "Commercial & SaaS",
+    "admin": "Admin Console",
+    "settings": "Settings"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "download": "Download",
+    "delete": "Delete",
+    "edit": "Edit",
+    "loading": "Loading...",
+    "search": "Search...",
+    "filter": "Filter",
+    "status": "Status",
+    "refresh": "Refresh",
+    "retry": "Retry",
+    "copy": "Copy",
+    "copyId": "Copy ID",
+    "view": "View",
+    "create": "Create",
+    "confirm": "Confirm",
+    "actions": "Actions",
+    "back": "Back",
+    "details": "Details",
+    "settings": "Settings",
+    "credits": "Credits",
+    "user": "User",
+    "role": "Role",
+    "email": "Email",
+    "success": "Success",
+    "failed": "Failed",
+    "running": "Running",
+    "queued": "Queued",
+    "completed": "Completed",
+    "cancelled": "Cancelled"
+  },
+  "dashboard": {
+    "title": "Production overview",
+    "description": "Projects, media operations and output activity in the current workspace.",
+    "newProject": "New project",
+    "activeProjects": "Active projects",
+    "jobsInProgress": "Jobs in progress",
+    "assetsAvailable": "Assets available",
+    "completedRenders": "Completed renders",
+    "currentWorkspace": "Current workspace",
+    "needAttention": "need attention",
+    "originalsAndMedia": "Originals and media",
+    "readyForExport": "Ready for export",
+    "recentProjects": "Recent projects",
+    "activeCount": "active",
+    "noProjectsTitle": "No projects yet",
+    "noProjectsDesc": "Create the first project in this workspace.",
+    "createProject": "Create project"
+  },
+  "commercial": {
+    "title": "Commercial & SaaS Hub",
+    "description": "Manage user accounts, plan subscriptions, credit wallet, usage history, and billing invoices",
+    "tabs": {
+      "profile": "👤 Profile",
+      "subscription": "💳 Subscription",
+      "pricing": "🏷️ Pricing & Plans",
+      "credits": "🪙 Credit Wallet",
+      "usage": "📊 Usage History",
+      "invoices": "🧾 Invoices & Payments"
+    },
+    "profile": {
+      "accountOverview": "Account Overview",
+      "displayName": "Display Name",
+      "role": "System Role",
+      "currentPlan": "Current Plan",
+      "creditBalance": "Credit Balance",
+      "quickActions": "Quick Actions",
+      "upgradePlan": "Upgrade Plan",
+      "purchaseCredits": "Purchase Credits"
+    },
+    "subscription": {
+      "title": "Current Active Subscription",
+      "status": "Status",
+      "autoRenew": "Auto Renew",
+      "renewsOn": "Renews On",
+      "planCapabilities": "Plan Capabilities",
+      "changePlan": "Change Subscription Plan"
+    },
+    "pricing": {
+      "title": "Pricing & Subscription Plans",
+      "subtitle": "Choose the plan that best fits your AI video production workflow",
+      "perMonth": "/month",
+      "currentPlanBadge": "CURRENT PLAN",
+      "selectPlan": "Select Plan",
+      "includedFeatures": "Included Capabilities:"
+    },
+    "credits": {
+      "title": "Credit Wallet & Balance Management",
+      "remainingCredits": "Remaining Credits",
+      "totalUsed": "Total Used",
+      "purchasePackages": "Purchase Credit Packages",
+      "creditsAmount": "Credits",
+      "buyNow": "Buy Now"
+    },
+    "usage": {
+      "title": "Credit Consumption & AI Execution Log",
+      "subtitle": "Detailed credit deductions and estimated cost breakdowns per task",
+      "capability": "AI Capability",
+      "provider": "Provider",
+      "model": "Model",
+      "creditsUsed": "Credits Used",
+      "estimatedCost": "Estimated Cost",
+      "duration": "Duration"
+    },
+    "invoices": {
+      "title": "Invoices & Payment Transactions",
+      "subtitle": "View credit purchase transactions and subscription receipts",
+      "invoiceNumber": "Invoice Number",
+      "amount": "Amount",
+      "date": "Payment Date",
+      "downloadReceipt": "Download Receipt"
+    }
+  },
+  "generation": {
+    "title": "Video Generation Experience",
+    "subtitle": "End-to-end automated workflow from prompts, storyboards, timeline drafts to video rendering",
+    "tabs": {
+      "wizard": "✨ New Generation Wizard",
+      "history": "📜 Generation History"
+    },
+    "wizard": {
+      "title": "AI Video Generation Wizard",
+      "subtitle": "Transform ideas into a complete video production pipeline with storyboards, prompt packs, timeline drafts, and render jobs.",
+      "promptLabel": "Production Prompt",
+      "promptPlaceholder": "Describe what video you want to create...",
+      "presetLabel": "Workflow Preset",
+      "generateBtn": "✨ Generate Video Now",
+      "generatingBtn": "Generating Video Pipeline...",
+      "pipelineLog": "Pipeline Execution Log",
+      "input": "Input",
+      "output": "Output",
+      "totalCost": "Total Cost",
+      "artifacts": "Artifact Files",
+      "resultPreview": "Generation Result Preview",
+      "downloadAll": "📦 Download All Project Artifacts"
+    },
+    "history": {
+      "title": "Generation History & Past Sessions",
+      "recorded": "sessions recorded",
+      "viewSession": "View Session"
+    },
+    "modal": {
+      "sessionTitle": "Generation Session Details",
+      "workflow": "Workflow",
+      "creditsConsumed": "Credits Consumed",
+      "duration": "Duration",
+      "finalPreview": "Final Output Preview",
+      "pipelineSteps": "Execution Pipeline Steps",
+      "artifactsTitle": "Generated Artifacts",
+      "openDownloadCenter": "Open Download Center",
+      "downloadCenterTitle": "Download Center",
+      "downloadCenterDesc": "Download generated artifacts, video, subtitles, and prompt packages",
+      "fileSize": "File Size"
+    }
+  },
+  "admin": {
+    "title": "Production Admin Console",
+    "subtitle": "Operational observability, system health, audit logging, and runtime feature controls",
+    "refreshStatus": "🔄 Refresh System Status",
+    "tabs": {
+      "metrics": "📊 Metrics",
+      "health": "💚 Health",
+      "audit": "📜 Audit Logs",
+      "flags": "🚩 Feature Flags",
+      "users": "👥 Users & Credits",
+      "jobs": "⚙️ Jobs & Queue",
+      "export": "💾 Backup & Export"
+    },
+    "metrics": {
+      "activeUsers": "Active Users",
+      "totalGenerations": "Total Generations",
+      "successRate": "Success Rate",
+      "queueLength": "Queue Length",
+      "avgTime": "Avg Generation Time",
+      "creditsConsumed": "Total Credits Consumed",
+      "apiLatency": "API Latency",
+      "providerDistribution": "Provider Usage Distribution"
+    },
+    "health": {
+      "overall": "System Overall Health",
+      "memoryUsed": "Memory Used",
+      "storageUsed": "Storage Used",
+      "cpuLoad": "CPU Load",
+      "componentMonitor": "Component Health Monitor"
+    },
+    "audit": {
+      "title": "Security Audit Log Ledger",
+      "subtitle": "Chronological security and operational system audit trail",
+      "timestamp": "Timestamp",
+      "eventType": "Event Type",
+      "userId": "User ID",
+      "description": "Description",
+      "ipAddress": "IP Address"
+    },
+    "flags": {
+      "title": "Dynamic Feature Flags System",
+      "subtitle": "Control system capabilities, provider availability, and studio features at runtime without redeployment",
+      "enabled": "ENABLED",
+      "disabled": "DISABLED"
+    },
+    "users": {
+      "title": "User Accounts & Credits Manager",
+      "subtitle": "View registered users, plan tiers, and remaining credit balances",
+      "userName": "User Name",
+      "email": "Email",
+      "planTier": "Plan Tier",
+      "remainingCredits": "Remaining Credits",
+      "totalGenerations": "Total Generations"
+    },
+    "jobs": {
+      "title": "Production Jobs & Queue Manager",
+      "subtitle": "Monitor active render jobs, worker threads, and queue throughput",
+      "jobId": "Job ID",
+      "sessionId": "Session ID",
+      "progress": "Progress"
+    },
+    "export": {
+      "title": "Backup & Export Center",
+      "subtitle": "Export user account data, security audit ledgers, and project metadata packages",
+      "userDataTitle": "Export User Account Data",
+      "userDataDesc": "Generates JSON bundle containing profile, wallet transactions, and usage history.",
+      "exportUserDataBtn": "Export User Data JSON",
+      "auditLogsTitle": "Export Audit Log Ledger",
+      "auditLogsDesc": "Exports all security events, plan upgrades, and generation logs.",
+      "exportAuditBtn": "Export Audit Logs JSON",
+      "projectBackupTitle": "Backup Project Metadata",
+      "projectBackupDesc": "Creates structured JSON backup of timeline tracks, clips, and asset metadata.",
+      "exportProjectBtn": "Export Project Backup"
+    }
+  },
+  "providers": {
+    "title": "AI Providers Integration Layer",
+    "subtitle": "Integration adapters connecting Studio Core with AI Providers (OpenAI, Gemini, Veo, Runway, Kling)",
+    "activeProviders": "Active Providers",
+    "healthyProviders": "Healthy Providers",
+    "defaultProvider": "Default Provider",
+    "supportedCapabilities": "Supported Capabilities",
+    "costEstimator": "Cost Estimator",
+    "healthCheck": "Health Check",
+    "configure": "Configure"
+  },
+  "settings": {
+    "title": "Settings",
+    "description": "Environment, feature flags and effective user settings.",
+    "userSession": "User session",
+    "environment": "Environment",
+    "featureFlags": "Feature flags",
+    "language": "Interface Language",
+    "selectLanguage": "Select Display Language",
+    "vietnamese": "Tiếng Việt (Vietnamese)",
+    "english": "English"
+  },
+  "auth": {
+    "signInTitle": "Sign in to AI Studio",
+    "signInDesc": "Use the prefilled development account to enter the workspace.",
+    "emailLabel": "Email",
+    "passwordLabel": "Password",
+    "signInBtn": "Sign in",
+    "localAuthNotice": "Local mock authentication. No external API key is used."
+  },
+  "errors": {
+    "screenErrorTitle": "This screen could not be displayed",
+    "screenErrorDesc": "Your work is still stored. Reload this screen to continue.",
+    "retryBtn": "🔄 Retry & Reload View",
+    "unauthorizedTitle": "Sign in required",
+    "unauthorizedDetail": "Your session is no longer valid.",
+    "forbiddenTitle": "Access denied",
+    "forbiddenDetail": "You do not have permission to view this resource.",
+    "notFoundTitle": "Page not found",
+    "notFoundDetail": "The requested route does not exist.",
+    "returnDashboard": "Return to dashboard"
+  }
+}

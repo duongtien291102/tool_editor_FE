@@ -80,6 +80,8 @@ import { CommercialScreen, type CommercialTab } from '@/features/commercial';
 import { GenerationScreen } from '@/features/generation';
 import { AdminConsoleScreen, type AdminTab } from '@/features/admin';
 import { CreditCard, ShieldCheck } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 
 type Route =
   | { name: 'login' }
@@ -299,16 +301,16 @@ function Brand() {
 }
 
 const navigation = [
-  { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, match: 'dashboard' },
-  { label: 'Workspaces', path: '/workspaces', icon: BriefcaseBusiness, match: 'workspaces' },
-  { label: 'Assets', path: '/assets', icon: Boxes, match: 'assets' },
-  { label: 'Job Center', path: '/jobs', icon: Gauge, match: 'jobs' },
-  { label: 'Render Center', path: '/renders', icon: Film, match: 'renders' },
-  { label: 'Providers', path: '/providers', icon: Sparkles, match: 'providers' },
-  { label: 'Generation Wizard', path: '/wizard', icon: WandSparkles, match: 'generation' },
-  { label: 'Commercial & SaaS', path: '/commercial', icon: CreditCard, match: 'commercial' },
-  { label: 'Admin Console', path: '/admin', icon: ShieldCheck, match: 'admin' },
-  { label: 'Settings', path: '/settings', icon: Settings, match: 'settings' },
+  { key: 'dashboard', label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard, match: 'dashboard' },
+  { key: 'workspaces', label: 'Workspaces', path: '/workspaces', icon: BriefcaseBusiness, match: 'workspaces' },
+  { key: 'assets', label: 'Assets', path: '/assets', icon: Boxes, match: 'assets' },
+  { key: 'jobs', label: 'Job Center', path: '/jobs', icon: Gauge, match: 'jobs' },
+  { key: 'renders', label: 'Render Center', path: '/renders', icon: Film, match: 'renders' },
+  { key: 'providers', label: 'Providers', path: '/providers', icon: Sparkles, match: 'providers' },
+  { key: 'wizard', label: 'Generation Wizard', path: '/wizard', icon: WandSparkles, match: 'generation' },
+  { key: 'commercial', label: 'Commercial & SaaS', path: '/commercial', icon: CreditCard, match: 'commercial' },
+  { key: 'admin', label: 'Admin Console', path: '/admin', icon: ShieldCheck, match: 'admin' },
+  { key: 'settings', label: 'Settings', path: '/settings', icon: Settings, match: 'settings' },
 ];
 
 function AppShell({
@@ -320,6 +322,7 @@ function AppShell({
   navigate: (path: string) => void;
   children: ReactNode;
 }) {
+  const { t } = useTranslation();
   const workspaces = useStudioStore((state) => state.workspaces);
   const currentWorkspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const selectWorkspace = useStudioStore((state) => state.selectWorkspace);
@@ -358,6 +361,7 @@ function AppShell({
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = route.name === item.match || (item.match === 'dashboard' && route.name === 'project');
+              const translatedLabel = t(`nav.${item.key}`, item.label);
               return (
                 <button
                   key={item.path}
@@ -365,7 +369,7 @@ function AppShell({
                     navigate(item.path);
                     setUi({ mobileNavigationOpen: false });
                   }}
-                  title={ui.sidebarCollapsed ? item.label : undefined}
+                  title={ui.sidebarCollapsed ? translatedLabel : undefined}
                   className={cn(
                     'flex h-10 w-full items-center gap-3 rounded-lg px-3 text-sm transition-colors',
                     active ? 'bg-primary/15 text-primary' : 'text-zinc-400 hover:bg-white/6 hover:text-zinc-100',
@@ -373,7 +377,7 @@ function AppShell({
                   )}
                 >
                   <Icon className="size-[18px] shrink-0" />
-                  {!ui.sidebarCollapsed && <span>{item.label}</span>}
+                  {!ui.sidebarCollapsed && <span>{translatedLabel}</span>}
                   {!ui.sidebarCollapsed && item.match === 'jobs' && activeJobs > 0 && (
                     <span className="ml-auto rounded bg-white/8 px-1.5 py-0.5 text-[10px] text-zinc-300">{activeJobs}</span>
                   )}
@@ -426,6 +430,7 @@ function AppShell({
           <div className="hidden h-5 w-px bg-border sm:block" />
           <Breadcrumb route={route} currentWorkspace={currentWorkspace?.name ?? 'Workspace'} navigate={navigate} />
           <div className="ml-auto flex items-center gap-2">
+            <LanguageSwitcher />
             <button onClick={() => navigate('/jobs')} className="relative rounded-lg border border-border p-2 text-muted-foreground hover:bg-accent hover:text-foreground" aria-label="Open active jobs">
               <Clock3 className="size-4" />
               {activeJobs > 0 && <span className="absolute -right-1 -top-1 grid min-w-4 place-items-center rounded bg-primary px-1 text-[9px] font-semibold text-primary-foreground">{activeJobs}</span>}
@@ -985,16 +990,22 @@ function ProviderRegistry() {
 }
 
 function SettingsCenter() {
+  const { t } = useTranslation();
   const user = useStudioStore((state) => state.user);
   const featureFlags = useStudioStore((state) => state.featureFlags);
   const setFeatureFlag = useStudioStore((state) => state.setFeatureFlag);
   return (
     <div className="mx-auto max-w-4xl">
-      <PageHeader title="Settings" description="Environment, feature flags and effective user settings." />
+      <PageHeader title={t('settings.title', 'Settings')} description={t('settings.description', 'Environment, feature flags and effective user settings.')} />
       <div className="space-y-5">
-        <Card className="p-5"><h2 className="font-semibold">User session</h2><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">Name</dt><dd className="mt-1">{user?.name}</dd></div><div><dt className="text-xs text-muted-foreground">Role</dt><dd className="mt-1">{user?.role}</dd></div><div><dt className="text-xs text-muted-foreground">Email</dt><dd className="mt-1">{user?.email}</dd></div><div><dt className="text-xs text-muted-foreground">Authentication</dt><dd className="mt-1">Local mock session</dd></div></dl></Card>
-        <Card className="p-5"><h2 className="font-semibold">Environment</h2><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">API mode</dt><dd className="mt-1">Mock foundation</dd></div><div><dt className="text-xs text-muted-foreground">Storage</dt><dd className="mt-1">Browser persistence</dd></div><div><dt className="text-xs text-muted-foreground">Theme</dt><dd className="mt-1">Dark creative workspace</dd></div><div><dt className="text-xs text-muted-foreground">Logging</dt><dd className="mt-1">Client console transport</dd></div></dl></Card>
-        <Card className="p-5"><h2 className="font-semibold">Feature flags</h2><div className="mt-4 divide-y divide-border">{Object.entries(featureFlags).map(([key, enabled]) => <label key={key} className="flex items-center justify-between py-3 text-sm"><span>{key}</span><input type="checkbox" checked={enabled} onChange={(event) => setFeatureFlag(key, event.target.checked)} className="size-4 accent-[hsl(var(--primary))]" /></label>)}</div></Card>
+        <Card className="p-5">
+          <h2 className="font-semibold">{t('settings.language', 'Interface Language')}</h2>
+          <p className="mb-4 text-xs text-muted-foreground">{t('settings.selectLanguage', 'Select Display Language')}</p>
+          <LanguageSwitcher variant="full" />
+        </Card>
+        <Card className="p-5"><h2 className="font-semibold">{t('settings.userSession', 'User session')}</h2><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">{t('common.user', 'Name')}</dt><dd className="mt-1">{user?.name}</dd></div><div><dt className="text-xs text-muted-foreground">{t('common.role', 'Role')}</dt><dd className="mt-1">{user?.role}</dd></div><div><dt className="text-xs text-muted-foreground">{t('common.email', 'Email')}</dt><dd className="mt-1">{user?.email}</dd></div><div><dt className="text-xs text-muted-foreground">Authentication</dt><dd className="mt-1">Local mock session</dd></div></dl></Card>
+        <Card className="p-5"><h2 className="font-semibold">{t('settings.environment', 'Environment')}</h2><dl className="mt-4 grid gap-4 text-sm sm:grid-cols-2"><div><dt className="text-xs text-muted-foreground">API mode</dt><dd className="mt-1">Mock foundation</dd></div><div><dt className="text-xs text-muted-foreground">Storage</dt><dd className="mt-1">Browser persistence</dd></div><div><dt className="text-xs text-muted-foreground">Theme</dt><dd className="mt-1">Dark creative workspace</dd></div><div><dt className="text-xs text-muted-foreground">Logging</dt><dd className="mt-1">Client console transport</dd></div></dl></Card>
+        <Card className="p-5"><h2 className="font-semibold">{t('settings.featureFlags', 'Feature flags')}</h2><div className="mt-4 divide-y divide-border">{Object.entries(featureFlags).map(([key, enabled]) => <label key={key} className="flex items-center justify-between py-3 text-sm"><span>{key}</span><input type="checkbox" checked={enabled} onChange={(event) => setFeatureFlag(key, event.target.checked)} className="size-4 accent-[hsl(var(--primary))]" /></label>)}</div></Card>
       </div>
     </div>
   );

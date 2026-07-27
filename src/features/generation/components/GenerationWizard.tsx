@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { generationService } from '../services/generationService';
 import type { GenerationSession, GenerationStepArtifact } from '../types';
+import { useProductionFlowStore } from '@/features/workflow/productionFlowStore';
 
 interface GenerationWizardProps {
   onGenerationComplete?: (session: GenerationSession) => void;
@@ -11,28 +12,65 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
   onGenerationComplete,
   onOpenDownloadCenter
 }) => {
-  const [prompt, setPrompt] = useState('Create a high-energy 15-second cinematic promo for an AI Video Studio platform.');
+  const [sourceProjectId] = useState(
+    () => localStorage.getItem('ai-studio-generation-project') ?? 'proj-default',
+  );
+  const syncProductionGeneration = useProductionFlowStore((state) => state.syncGeneration);
+  const markProductionStarted = useProductionFlowStore(
+    (state) => state.markGenerationStarted,
+  );
+  const [prompt, setPrompt] = useState(() => {
+    const scriptDraft = localStorage.getItem('ai-studio-generation-draft');
+    if (scriptDraft) {
+      localStorage.removeItem('ai-studio-generation-draft');
+      localStorage.removeItem('ai-studio-generation-project');
+      return scriptDraft;
+    }
+    return 'Create a high-energy 15-second cinematic promo for an AI Video Studio platform.';
+  });
   const [workflowType, setWorkflowType] = useState('Commercial Promo');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentSession, setCurrentSession] = useState<GenerationSession | null>(null);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const submissionInFlight = useRef(false);
 
   const workflows = ['Commercial Promo', 'Social Media Reel', 'Product Showcase', 'Movie Teaser'];
 
   const handleStartGeneration = async () => {
-    if (!prompt.trim()) return;
+    if (!prompt.trim() || submissionInFlight.current) return;
 
+    submissionInFlight.current = true;
     setIsGenerating(true);
+    setGenerationError(null);
+    let sessionId: string | undefined;
     try {
-      const session = await generationService.createSession(prompt, workflowType);
+      const session = await generationService.createSession(
+        prompt,
+        workflowType,
+        sourceProjectId,
+      );
+      sessionId = session.id;
       setCurrentSession(session);
+      markProductionStarted(sourceProjectId, session.id);
 
       const completedSession = await generationService.startGeneration(session.id, updatedSession => {
         setCurrentSession({ ...updatedSession });
       });
 
       setCurrentSession(completedSession);
+      syncProductionGeneration(sourceProjectId, completedSession);
       onGenerationComplete?.(completedSession);
+    } catch (error) {
+      setGenerationError(error instanceof Error ? error.message : 'Video generation failed');
+      if (sessionId) {
+        const failedSession = await generationService.getSession(sessionId).catch(() => null);
+        if (failedSession) {
+          setCurrentSession(failedSession);
+          syncProductionGeneration(sourceProjectId, failedSession);
+        }
+      }
     } finally {
+      submissionInFlight.current = false;
       setIsGenerating(false);
     }
   };
@@ -100,6 +138,13 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           </div>
         </div>
       </div>
+
+      {generationError && (
+        <div className="rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-200">
+          <p className="font-bold">Video generation failed</p>
+          <p className="mt-1 break-words">{generationError}</p>
+        </div>
+      )}
 
       {/* Real-time Pipeline Execution Steps */}
       {currentSession && (

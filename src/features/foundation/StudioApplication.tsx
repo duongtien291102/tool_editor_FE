@@ -11,6 +11,7 @@ import {
   CreditCard,
   Download,
   Film,
+  FileText,
   Folder,
   FolderOpen,
   Gauge,
@@ -48,6 +49,7 @@ import {
   type FormEvent,
   type ReactNode,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -70,6 +72,10 @@ import { cn } from '@/core/utils/cn';
 import { appLogger } from '@/core/logger';
 import { WorkflowPanel } from '@/features/workflow';
 import {
+  useProductionFlowStore,
+  type ProductionScene,
+} from '@/features/workflow/productionFlowStore';
+import {
   AssetVersionPanel,
   CompactAssetVersions,
   assetPipelineTypes,
@@ -84,6 +90,7 @@ import { AdminConsoleScreen, type AdminTab } from '@/features/admin';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { PexelsLibrary } from '@/features/pexels';
+import { ManualScriptWorkspace } from '@/features/script-editor';
 
 type Route =
   | { name: 'login' }
@@ -567,6 +574,7 @@ function Breadcrumb({
   currentWorkspace: string;
   navigate: (path: string) => void;
 }) {
+  const { t } = useTranslation('editor');
   const project = useStudioStore((state) =>
     route.name === 'project' || route.name === 'editor'
       ? state.projects.find((item) => item.id === route.projectId)
@@ -592,7 +600,7 @@ function Breadcrumb({
           {route.name === 'editor' && (
             <>
               <span className="px-2">/</span>
-              <span>Editor</span>
+              <span>{t('navigation.editor')}</span>
             </>
           )}
         </>
@@ -668,7 +676,7 @@ function RouteScreen({ route, navigate }: { route: Route; navigate: (path: strin
         />
       );
     return route.name === 'editor' ? (
-      <EditorShell project={project} />
+      <EditorShell project={project} navigate={navigate} />
     ) : (
       <ProjectOverview project={project} navigate={navigate} />
     );
@@ -1081,7 +1089,8 @@ function ProjectOverview({
               The production objects prepared for editing.
             </p>
           </div>
-          <div className="grid gap-px bg-border sm:grid-cols-3">
+          <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
+            <ProjectModule icon={<FileText />} name="Kịch bản" meta="Bản thảo / Tự động lưu" />
             <ProjectModule icon={<Layers3 />} name="Storyboard" meta="1 board / 6 scenes" />
             <ProjectModule icon={<Clapperboard />} name="Timeline" meta="Main sequence / Draft" />
             <ProjectModule
@@ -1171,52 +1180,89 @@ function ProjectModule({ icon, name, meta }: { icon: ReactNode; name: string; me
   );
 }
 
-const trackRows = [
-  {
-    id: 'video-1',
-    label: 'V1',
-    name: 'Primary video',
-    clips: [
-      { id: 'clip-city', left: 2, width: 27, name: 'City dawn' },
-      { id: 'clip-product', left: 31, width: 32, name: 'Product turntable' },
-      { id: 'clip-end', left: 65, width: 22, name: 'End frame' },
-    ],
-  },
-  {
-    id: 'video-2',
-    label: 'V2',
-    name: 'Titles',
-    clips: [{ id: 'clip-title', left: 34, width: 19, name: 'Product title' }],
-  },
-  {
-    id: 'audio-1',
-    label: 'A1',
-    name: 'Music',
-    clips: [{ id: 'clip-audio', left: 1, width: 86, name: 'Pulse score' }],
-  },
-  {
-    id: 'audio-2',
-    label: 'A2',
-    name: 'Voice',
-    clips: [
-      { id: 'clip-voice', left: 9, width: 18, name: 'Voice 01' },
-      { id: 'clip-voice-2', left: 42, width: 24, name: 'Voice 02' },
-    ],
-  },
-];
+interface ProjectTimelineClip {
+  id: string;
+  sceneId: string;
+  type: 'visual' | 'voice';
+  left: number;
+  width: number;
+  startSeconds: number;
+  durationSeconds: number;
+  name: string;
+  content: string;
+}
 
-function EditorShell({ project }: { project: ProjectRecord }) {
+const EMPTY_PRODUCTION_SCENES: ProductionScene[] = [];
+
+function buildTimelineFromScenes(scenes: ProductionScene[]) {
+  const sceneDuration = 5;
+  const totalSeconds = Math.max(sceneDuration, scenes.length * sceneDuration);
+  const clipsFor = (type: ProjectTimelineClip['type']): ProjectTimelineClip[] =>
+    scenes.map((scene, index) => ({
+      id: `${type}-${scene.id}`,
+      sceneId: scene.id,
+      type,
+      left: (index * sceneDuration / totalSeconds) * 100,
+      width: (sceneDuration / totalSeconds) * 100,
+      startSeconds: index * sceneDuration,
+      durationSeconds: sceneDuration,
+      name: type === 'visual' ? scene.title : scene.narration,
+      content: type === 'visual' ? scene.visual : scene.narration,
+    }));
+  return {
+    totalSeconds,
+    rows: [
+      { id: 'script-visuals', label: 'V1', name: 'sceneVisuals', clips: clipsFor('visual') },
+      { id: 'script-voice', label: 'A1', name: 'sceneNarration', clips: clipsFor('voice') },
+    ],
+  };
+}
+
+function EditorShell({
+  project,
+  navigate,
+}: {
+  project: ProjectRecord;
+  navigate: (path: string) => void;
+}) {
+  const { t } = useTranslation('editor');
   const editor = useStudioStore((state) => state.editor);
   const setEditor = useStudioStore((state) => state.setEditor);
+  const [workspaceMode, setWorkspaceMode] = useState<'timeline' | 'script'>('timeline');
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const allAssets = useStudioStore((state) => state.assets);
   const allJobs = useStudioStore((state) => state.jobs);
   const assets = allAssets.filter((asset) => asset.workspaceId === workspaceId);
   const jobs = allJobs.filter((job) => job.projectId === project.id);
-  const selectedAsset = assets[0];
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col bg-[#0d1012] text-zinc-200">
       <div className="flex h-12 items-center gap-1 border-b border-white/8 px-3">
+        <button
+          onClick={() => setWorkspaceMode('timeline')}
+          className={cn(
+            'mr-1 flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium',
+            workspaceMode === 'timeline'
+              ? 'bg-white/10 text-zinc-100'
+              : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300',
+          )}
+        >
+          <Clapperboard className="size-3.5" />
+          {t('modes.timeline')}
+        </button>
+        <button
+          onClick={() => setWorkspaceMode('script')}
+          className={cn(
+            'mr-2 flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium',
+            workspaceMode === 'script'
+              ? 'bg-primary text-primary-foreground'
+              : 'text-zinc-500 hover:bg-white/5 hover:text-zinc-300',
+          )}
+        >
+          <FileText className="size-3.5" />
+          {t('modes.script')}
+        </button>
+        {workspaceMode === 'timeline' && (
+          <>
         {(['select', 'trim', 'split'] as const).map((tool) => (
           <button
             key={tool}
@@ -1228,21 +1274,38 @@ function EditorShell({ project }: { project: ProjectRecord }) {
                 : 'text-zinc-400 hover:bg-white/7',
             )}
           >
-            {tool}
+            {t(`tools.${tool}`)}
           </button>
         ))}
         <div className="mx-2 h-5 w-px bg-white/10" />
-        <button className="editor-icon" aria-label="Undo">
+        <button className="editor-icon" aria-label={t('tools.undo')}>
           <ArrowLeft className="size-4" />
         </button>
-        <button className="editor-icon" aria-label="Redo">
+        <button className="editor-icon" aria-label={t('tools.redo')}>
           <Redo2 className="size-4" />
         </button>
+          </>
+        )}
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
-          <span>Timeline draft saved</span>
-          <Button size="sm">Render</Button>
+          <span>
+            {workspaceMode === 'script'
+              ? t('status.scriptAutoSave')
+              : t('status.timelineSaved')}
+          </span>
+          {workspaceMode === 'timeline' && <Button size="sm">{t('actions.render')}</Button>}
         </div>
       </div>
+      {workspaceMode === 'script' ? (
+        <ManualScriptWorkspace
+          projectId={project.id}
+          projectName={project.name}
+          onUseForGeneration={(prompt) => {
+            localStorage.setItem('ai-studio-generation-draft', prompt);
+            localStorage.setItem('ai-studio-generation-project', project.id);
+            navigate('/generation');
+          }}
+        />
+      ) : (
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(440px,1fr)] 2xl:grid-cols-[260px_minmax(540px,1fr)_280px]">
         <aside className="hidden min-h-0 border-r border-white/8 bg-[#111517] lg:flex lg:flex-col">
           <div className="grid grid-cols-3 border-b border-white/8">
@@ -1255,7 +1318,7 @@ function EditorShell({ project }: { project: ProjectRecord }) {
                   : 'text-zinc-500',
               )}
             >
-              Workflow
+              {t('panels.workflow')}
             </button>
             <button
               onClick={() => setEditor({ leftPanel: 'assets' })}
@@ -1266,7 +1329,7 @@ function EditorShell({ project }: { project: ProjectRecord }) {
                   : 'text-zinc-500',
               )}
             >
-              Assets
+              {t('panels.assets')}
             </button>
             <button
               onClick={() => setEditor({ leftPanel: 'jobs' })}
@@ -1277,7 +1340,7 @@ function EditorShell({ project }: { project: ProjectRecord }) {
                   : 'text-zinc-500',
               )}
             >
-              Jobs
+              {t('panels.jobs')}
             </button>
           </div>
           {editor.leftPanel === 'workflow' && <WorkflowPanel project={project} />}
@@ -1287,13 +1350,14 @@ function EditorShell({ project }: { project: ProjectRecord }) {
         <section className="grid min-h-0 grid-rows-[minmax(280px,1fr)_300px]">
           <PreviewCanvas
             project={project}
-            assetName={selectedAsset?.name}
+            projectId={project.id}
             playhead={editor.playhead}
           />
-          <TimelineShell />
+          <TimelineShell projectId={project.id} />
         </section>
         <Inspector project={project} />
       </div>
+      )}
     </div>
   );
 }
@@ -1374,14 +1438,23 @@ function EditorJobs({ jobs }: { jobs: ReturnType<typeof useStudioStore.getState>
 
 function PreviewCanvas({
   project,
-  assetName,
+  projectId,
   playhead,
 }: {
   project: ProjectRecord;
-  assetName?: string;
+  projectId: string;
   playhead: number;
 }) {
+  const { t } = useTranslation('editor');
   const [playing, setPlaying] = useState(false);
+  const scenes = useProductionFlowStore(
+    (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
+  );
+  const activeScene =
+    scenes.length > 0
+      ? scenes[Math.min(scenes.length - 1, Math.floor(playhead / 5))]
+      : undefined;
+  const totalSeconds = Math.max(5, scenes.length * 5);
   return (
     <div className="relative flex min-h-0 items-center justify-center bg-[#090b0c] p-5">
       <div
@@ -1396,14 +1469,23 @@ function PreviewCanvas({
       >
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_35%,rgba(92,142,158,0.28),transparent_38%),linear-gradient(145deg,#202a2f,#111517_65%)]" />
         <div className="absolute bottom-5 left-5">
-          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">Current frame</p>
-          <p className="mt-1 text-sm font-medium text-zinc-100">{assetName ?? project.name}</p>
+          <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
+            {t('preview.currentFrame')}
+          </p>
+          <p className="mt-1 text-sm font-medium text-zinc-100">
+            {activeScene?.title ?? t('timeline.emptyTitle')}
+          </p>
+          {activeScene?.visual && (
+            <p className="mt-2 max-w-[70%] text-[11px] leading-5 text-zinc-400">
+              {activeScene.visual}
+            </p>
+          )}
         </div>
         <div className="absolute inset-0 grid place-items-center">
           <button
             className="grid size-12 place-items-center rounded-full bg-zinc-100/90 text-zinc-900 shadow-xl"
             onClick={() => setPlaying(!playing)}
-            aria-label={playing ? 'Pause preview' : 'Play preview'}
+            aria-label={playing ? t('preview.pause') : t('preview.play')}
           >
             {playing ? (
               <Pause className="size-5 fill-current" />
@@ -1414,44 +1496,34 @@ function PreviewCanvas({
         </div>
       </div>
       <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md border border-white/8 bg-black/60 px-2 py-1 font-mono text-[10px] text-zinc-400">
-        {formatTime(playhead)} / 00:00:42:12
+        {formatTime(Math.min(playhead, totalSeconds))} / {formatTime(totalSeconds)}
       </div>
     </div>
   );
 }
 
-function TimelineShell() {
+function TimelineShell({ projectId }: { projectId: string }) {
+  const { t } = useTranslation('editor');
   const editor = useStudioStore((state) => state.editor);
   const setEditor = useStudioStore((state) => state.setEditor);
-  const projectId = useStudioStore((state) => state.currentProjectId);
-  const importedTimelineClips = useStudioStore((state) => state.importedTimelineClips);
-  const rulerMarks = Array.from({ length: 11 }, (_, index) => index * 5);
-  const projectImports = importedTimelineClips.filter((clip) => clip.projectId === projectId);
-  const timelineRows = trackRows.map((track) =>
-    track.id === 'video-2'
-      ? {
-          ...track,
-          clips: [
-            ...track.clips,
-            ...projectImports.map((clip, index) => ({
-              id: clip.id,
-              left: Math.min(88, 56 + index * 11),
-              width: Math.max(7, Math.min(20, (clip.durationSeconds / 50) * 100)),
-              name: clip.name,
-            })),
-          ],
-        }
-      : track,
+  const scenes = useProductionFlowStore(
+    (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
+  const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const rulerMarks = Array.from(
+    { length: Math.min(11, Math.max(2, Math.ceil(timeline.totalSeconds / 5) + 1)) },
+    (_, index) => Math.min(index * 5, timeline.totalSeconds),
+  );
+  const timelineRows = timeline.rows;
   return (
     <div className="min-h-0 border-t border-white/8 bg-[#111517]">
       <div className="flex h-10 items-center border-b border-white/8 px-3">
-        <span className="text-xs font-medium">Main timeline</span>
+        <span className="text-xs font-medium">{t('timeline.title')}</span>
         <div className="ml-auto flex items-center gap-2">
           <button
             className="editor-icon"
             onClick={() => setEditor({ zoom: Math.max(0.5, editor.zoom - 0.25) })}
-            aria-label="Zoom out"
+            aria-label={t('timeline.zoomOut')}
           >
             <ZoomOut className="size-3.5" />
           </button>
@@ -1461,7 +1533,7 @@ function TimelineShell() {
           <button
             className="editor-icon"
             onClick={() => setEditor({ zoom: Math.min(2, editor.zoom + 0.25) })}
-            aria-label="Zoom in"
+            aria-label={t('timeline.zoomIn')}
           >
             <ZoomIn className="size-3.5" />
           </button>
@@ -1475,7 +1547,9 @@ function TimelineShell() {
               className="flex h-12 items-center gap-2 border-b border-r border-white/8 px-2"
             >
               <span className="w-6 font-mono text-[10px] text-zinc-500">{track.label}</span>
-              <span className="truncate text-[10px] text-zinc-400">{track.name}</span>
+              <span className="truncate text-[10px] text-zinc-400">
+                {t(`timeline.tracks.${track.name}`)}
+              </span>
             </div>
           ))}
         </div>
@@ -1484,12 +1558,12 @@ function TimelineShell() {
           style={{ width: `${Math.max(100, editor.zoom * 100)}%` }}
         >
           <div className="relative h-7 border-b border-white/8 bg-[#0d1012]">
-            {rulerMarks.map((mark, index) => (
+            {rulerMarks.map((mark) => (
               <button
                 key={mark}
                 onClick={() => setEditor({ playhead: mark })}
                 className="absolute top-0 h-full border-l border-white/10 pl-1 font-mono text-[9px] text-zinc-600"
-                style={{ left: `${index * 10}%` }}
+                style={{ left: `${(mark / timeline.totalSeconds) * 100}%` }}
               >{`00:${String(mark).padStart(2, '0')}`}</button>
             ))}
           </div>
@@ -1504,15 +1578,17 @@ function TimelineShell() {
                   onClick={() => setEditor({ selectedClipId: clip.id })}
                   className={cn(
                     'absolute top-1.5 h-9 overflow-hidden rounded-md border px-2 text-left text-[10px]',
-                    track.id.startsWith('audio')
+                    track.id === 'script-voice'
                       ? 'border-emerald-700/40 bg-emerald-900/30 text-emerald-200'
                       : 'border-cyan-700/40 bg-cyan-900/35 text-cyan-100',
                     editor.selectedClipId === clip.id && 'ring-2 ring-primary',
                   )}
                   style={{ left: `${clip.left}%`, width: `${clip.width}%` }}
                 >
-                  <span className="truncate">{clip.name}</span>
-                  {track.id.startsWith('audio') && (
+                  <span className="block truncate">
+                    {clip.name || t('timeline.untitledClip')}
+                  </span>
+                  {track.id === 'script-voice' && (
                     <span className="absolute inset-x-2 bottom-1 h-1 bg-[repeating-linear-gradient(90deg,rgba(110,231,183,.45)_0_2px,transparent_2px_5px)]" />
                   )}
                 </button>
@@ -1529,16 +1605,29 @@ function TimelineShell() {
                   setEditor({
                     playhead: Math.max(
                       0,
-                      Math.min(50, ((event.clientX - box.left) / box.width) * 50),
+                      Math.min(
+                        timeline.totalSeconds,
+                        ((event.clientX - box.left) / box.width) * timeline.totalSeconds,
+                      ),
                     ),
                   });
               }
             }}
-            style={{ left: `${(editor.playhead / 50) * 100}%` }}
-            aria-label="Timeline playhead"
+            style={{
+              left: `${(Math.min(editor.playhead, timeline.totalSeconds) / timeline.totalSeconds) * 100}%`,
+            }}
+            aria-label={t('timeline.playhead')}
           >
             <span className="absolute -left-1.5 top-0 size-3 rotate-45 bg-primary" />
           </button>
+          {scenes.length === 0 && (
+            <div className="pointer-events-none absolute inset-7 grid place-items-center border border-dashed border-white/10 bg-black/10 text-center">
+              <div>
+                <p className="text-xs font-medium text-zinc-300">{t('timeline.emptyTitle')}</p>
+                <p className="mt-1 text-[10px] text-zinc-500">{t('timeline.emptyDescription')}</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1546,32 +1635,59 @@ function TimelineShell() {
 }
 
 function Inspector({ project }: { project: ProjectRecord }) {
+  const { t } = useTranslation('editor');
   const selectedClipId = useStudioStore((state) => state.editor.selectedClipId);
+  const scenes = useProductionFlowStore(
+    (state) => state.projects[project.id]?.scenes ?? EMPTY_PRODUCTION_SCENES,
+  );
+  const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const selectedClip = timeline.rows
+    .flatMap((row) => row.clips)
+    .find((clip) => clip.id === selectedClipId);
   return (
     <aside className="hidden min-h-0 overflow-auto border-l border-white/8 bg-[#111517] p-4 2xl:block">
       <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold">Inspector</h2>
+        <h2 className="text-xs font-semibold">{t('inspector.title')}</h2>
         <PanelRight className="size-4 text-zinc-600" />
       </div>
       <div className="mt-5 aspect-video rounded-lg border border-white/8 bg-[#1d2529]" />
       <dl className="mt-5 space-y-4 text-xs">
-        <InspectorField label="Selection" value={selectedClipId ?? 'No clip selected'} />
-        <InspectorField label="Position" value="00:00:12:10" />
-        <InspectorField label="Duration" value="00:00:08:06" />
-        <InspectorField label="Scale" value="100%" />
-        <InspectorField label="Opacity" value="100%" />
         <InspectorField
-          label="Project format"
+          label={t('inspector.selection')}
+          value={selectedClip?.name || t('inspector.noSelection')}
+        />
+        {selectedClip && (
+          <>
+            <InspectorField
+              label={t('inspector.clipType')}
+              value={t(`inspector.clipTypes.${selectedClip.type}`)}
+            />
+            <InspectorField
+              label={t('inspector.position')}
+              value={formatTime(selectedClip.startSeconds)}
+            />
+            <InspectorField
+              label={t('inspector.duration')}
+              value={formatTime(selectedClip.durationSeconds)}
+            />
+            <InspectorField
+              label={t('inspector.content')}
+              value={selectedClip.content || t('inspector.noContent')}
+            />
+          </>
+        )}
+        <InspectorField
+          label={t('inspector.projectFormat')}
           value={`${project.aspectRatio} / ${project.frameRate} fps`}
         />
       </dl>
       <div className="mt-6 border-t border-white/8 pt-4">
         <button className="flex w-full items-center justify-between text-xs">
-          <span>Transform</span>
+          <span>{t('inspector.transform')}</span>
           <ChevronDown className="size-3.5 text-zinc-500" />
         </button>
         <button className="mt-4 flex w-full items-center justify-between text-xs">
-          <span>Audio</span>
+          <span>{t('inspector.audio')}</span>
           <ChevronDown className="size-3.5 text-zinc-500" />
         </button>
       </div>

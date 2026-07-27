@@ -44,12 +44,25 @@ export interface RetryPolicy {
 
 export interface AiProviderProfile {
   provider: string;
-  status: 'Available' | 'Disabled';
+  status: 'Available' | 'Unavailable' | 'Disabled';
   enabled: boolean;
   priority: number;
   supportedCapabilities: string[];
-  healthStatus: 'Healthy' | 'Degraded' | 'Unhealthy' | 'Disabled';
-  lastHealthCheck: string;
+  healthStatus:
+    | 'Unknown'
+    | 'Healthy'
+    | 'Offline'
+    | 'Connection failed'
+    | 'Provider unavailable'
+    | 'Invalid API Key'
+    | 'Unauthorized'
+    | 'Forbidden'
+    | 'Rate Limited'
+    | 'Timeout'
+    | 'Not Found'
+    | 'Server Error'
+    | 'Disabled';
+  lastHealthCheck?: string | null;
   secretBinding: SecretBinding;
   isDefault: boolean;
   configuration: ProviderConfig;
@@ -59,6 +72,9 @@ export interface AiProviderProfile {
   retryPolicy: RetryPolicy;
   fallbackProvider?: string;
   latencyMs?: number;
+  healthDetails?: string | null;
+  lastHttpStatusCode?: number | null;
+  lastErrorCode?: string | null;
 }
 
 export interface HealthCheckResult {
@@ -68,6 +84,8 @@ export interface HealthCheckResult {
   latencyMs: number;
   checkedAt: string;
   details: string;
+  httpStatusCode?: number | null;
+  errorCode?: string | null;
 }
 
 export interface CostEstimateRequest {

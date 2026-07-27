@@ -31,7 +31,7 @@ export const GenerationScreen: React.FC<GenerationScreenProps> = ({ defaultTab =
   };
 
   const handleDownloadSingle = (artifact: GenerationStepArtifact) => {
-    generationService.mockDownloadArtifact(artifact);
+    generationService.downloadArtifact(artifact);
   };
 
   return (

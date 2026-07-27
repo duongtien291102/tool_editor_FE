@@ -1,0 +1,100 @@
+{
+  "navigation": { "editor": "Editor" },
+  "modes": { "timeline": "Edit", "script": "Script" },
+  "tools": {
+    "select": "Select",
+    "trim": "Trim",
+    "split": "Split",
+    "undo": "Undo",
+    "redo": "Redo"
+  },
+  "status": {
+    "timelineSaved": "Timeline draft saved",
+    "scriptAutoSave": "Script autosave"
+  },
+  "actions": { "render": "Render" },
+  "panels": { "workflow": "Workflow", "assets": "Assets", "jobs": "Jobs" },
+  "preview": {
+    "currentFrame": "Current frame",
+    "play": "Play preview",
+    "pause": "Pause preview"
+  },
+  "timeline": {
+    "title": "Main timeline",
+    "zoomOut": "Zoom out",
+    "zoomIn": "Zoom in",
+    "playhead": "Timeline playhead",
+    "emptyTitle": "No real scenes yet",
+    "emptyDescription": "Create or select a script to build this timeline.",
+    "untitledClip": "Untitled scene",
+    "tracks": {
+      "sceneVisuals": "Scene visuals",
+      "sceneNarration": "Scene narration"
+    }
+  },
+  "inspector": {
+    "title": "Inspector",
+    "selection": "Selection",
+    "noSelection": "No clip selected",
+    "clipType": "Clip type",
+    "clipTypes": {
+      "visual": "Scene visual",
+      "voice": "Narration"
+    },
+    "position": "Position",
+    "duration": "Duration",
+    "content": "Saved content",
+    "noContent": "No content",
+    "projectFormat": "Project format",
+    "transform": "Transform",
+    "audio": "Audio"
+  },
+  "workflow": {
+    "title": "Video workflow",
+    "description": "Timeline is generated from validated workflow data.",
+    "liveDescription": "Status is synchronized from the script, Gemini, and generation session.",
+    "selectedOutput": "Selected output",
+    "states": {
+      "idea": "Idea",
+      "storyboard": "Storyboard",
+      "scene": "Scene",
+      "prompt-pack": "Prompt Pack",
+      "timeline-draft": "Timeline Draft",
+      "ready-for-render": "Ready For Render"
+    },
+    "statuses": {
+      "pending": "Pending",
+      "current": "Current",
+      "completed": "Completed",
+      "blocked": "Blocked"
+    },
+    "fields": {
+      "title": "Title",
+      "summary": "Summary",
+      "audience": "Audience",
+      "structure": "Structure",
+      "scenes": "Scenes",
+      "duration": "Duration"
+      ,"status": "Status"
+      ,"checks": "Checks"
+      ,"source": "Source"
+      ,"generationSession": "Generation session"
+    },
+    "values": {
+      "summary": "A concise visual story built from a single creative direction.",
+      "audience": "Design-conscious product customers",
+      "structure": "Opening · Detail · Motion · End frame"
+    },
+    "checks": {
+      "complete": "Scene titles, narration, and visuals are complete",
+      "incomplete": "Some scenes are incomplete",
+      "ready": "Video generated and ready",
+      "notReady": "No completed video yet"
+    },
+    "sources": {
+      "script": "Selected script",
+      "notPrepared": "Not sent to generation",
+      "notCreated": "No session created"
+    }
+  }
+}

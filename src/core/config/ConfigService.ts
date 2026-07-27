@@ -29,10 +29,8 @@ class ConfigService {
   }
 
   public getGeminiApiKey(): string {
-    const key: unknown = import.meta.env.VITE_GEMINI_API_KEY ?? import.meta.env.GEMINI_API_KEY;
-    if (typeof key === 'string' && key.length > 0) {
-      return key;
-    }
+    // Provider credentials are server-side only. Browser bundles must never read
+    // VITE_* AI keys because Vite embeds them in public JavaScript.
     return '';
   }
 }

@@ -13,6 +13,7 @@ import { Card, DataTable, EmptyState } from '@/components/ui/Foundation';
 import { useStudioStore } from '@/state/studioStore';
 import { aiProviderService } from '../services/aiProviderService';
 import type { AiProviderProfile, SecretSourceType } from '../types';
+import { getApiError } from '@/api/httpClient';
 import { CapabilityViewer } from './CapabilityViewer';
 import { CostBadge } from './CostBadge';
 import { CostEstimateModal } from './CostEstimateModal';
@@ -26,6 +27,7 @@ export function AiProvidersScreen() {
   const [providers, setProviders] = useState<AiProviderProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const [healthChecking, setHealthChecking] = useState<Record<string, boolean>>({});
+  const [connectionError, setConnectionError] = useState<string | null>(null);
 
   const [selectedProvider, setSelectedProvider] = useState<AiProviderProfile | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -37,8 +39,16 @@ export function AiProvidersScreen() {
     try {
       const data = await aiProviderService.getProviders();
       setProviders(data);
-    } catch {
-      notify('Failed to load AI Provider profiles');
+      setConnectionError(null);
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      setProviders([]);
+      setConnectionError(
+        apiError.status
+          ? `Backend unavailable (${apiError.status}): ${apiError.message}`
+          : `Connection failed: ${apiError.message}`,
+      );
+      notify('Connection failed while loading AI Provider profiles');
     } finally {
       setLoading(false);
     }
@@ -69,16 +79,26 @@ export function AiProvidersScreen() {
           p.provider === providerName
             ? {
                 ...p,
-                healthStatus: res.isHealthy ? 'Healthy' : 'Degraded',
+                healthStatus: res.status as AiProviderProfile['healthStatus'],
                 lastHealthCheck: res.checkedAt,
                 latencyMs: res.latencyMs,
               }
             : p,
         ),
       );
-      notify(`${providerName} health check: ${res.status} (${res.latencyMs}ms)`);
-    } catch {
-      notify(`Health check failed for ${providerName}`);
+      notify(
+        `${providerName}: ${res.status} (${res.latencyMs}ms)${res.httpStatusCode ? ` HTTP ${res.httpStatusCode}` : ''}`,
+      );
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      setProviders((prev) =>
+        prev.map((p) =>
+          p.provider === providerName
+            ? { ...p, healthStatus: 'Connection failed', latencyMs: undefined }
+            : p,
+        ),
+      );
+      notify(`${providerName}: Connection failed - ${apiError.message}`);
     } finally {
       setHealthChecking((prev) => ({ ...prev, [providerName]: false }));
     }
@@ -111,9 +131,9 @@ export function AiProvidersScreen() {
     }
   };
 
-  const activeCount = providers.filter((p) => p.enabled).length;
+  const activeCount = providers.filter((p) => p.enabled && p.status === 'Available').length;
   const healthyCount = providers.filter((p) => p.healthStatus === 'Healthy').length;
-  const defaultProvider = providers.find((p) => p.isDefault)?.provider || 'OpenAI';
+  const defaultProvider = providers.find((p) => p.isDefault)?.provider || 'None';
 
   return (
     <div className="mx-auto max-w-[1500px] space-y-6">
@@ -137,11 +157,19 @@ export function AiProvidersScreen() {
       </div>
 
       {/* Summary Metrics */}
+      {connectionError && (
+        <Card className="border-red-500/50 bg-red-500/10 p-4 text-sm text-red-300">
+          <p className="font-semibold">Connection failed</p>
+          <p className="mt-1">{connectionError}</p>
+        </Card>
+      )}
       <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
         <div className="bg-card px-5 py-4">
           <p className="text-xs text-muted-foreground">Registered Integration Providers</p>
           <p className="mt-2 font-mono text-2xl font-semibold">{providers.length}</p>
-          <p className="mt-1 text-xs text-muted-foreground">OpenAI, Gemini, Veo, Runway, Kling</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {providers.length > 0 ? providers.map((provider) => provider.provider).join(', ') : 'No backend data'}
+          </p>
         </div>
         <div className="bg-card px-5 py-4">
           <p className="text-xs text-muted-foreground">Active & Enabled</p>
@@ -153,7 +181,7 @@ export function AiProvidersScreen() {
         <div className="bg-card px-5 py-4">
           <p className="text-xs text-muted-foreground">Healthy Endpoints</p>
           <p className="mt-2 font-mono text-2xl font-semibold text-cyan-400">{healthyCount}</p>
-          <p className="mt-1 text-xs text-muted-foreground">Synthetic checks passed</p>
+          <p className="mt-1 text-xs text-muted-foreground">Authenticated provider checks passed</p>
         </div>
         <div className="bg-card px-5 py-4">
           <p className="text-xs text-muted-foreground">Default Primary Provider</p>
@@ -165,7 +193,7 @@ export function AiProvidersScreen() {
       {/* Main Table */}
       {loading ? (
         <Card className="p-8 text-center text-muted-foreground">Loading AI Provider profiles...</Card>
-      ) : providers.length === 0 ? (
+      ) : connectionError ? null : providers.length === 0 ? (
         <EmptyState
           icon={<Sparkles className="size-5" />}
           title="No providers registered"
@@ -218,6 +246,7 @@ export function AiProvidersScreen() {
                       enabled={p.enabled}
                       onToggle={(val) => handleToggle(p.provider, val)}
                     />
+                    <p className="mt-1 text-[10px] text-muted-foreground">{p.status}</p>
                   </td>
 
                   {/* Priority */}
@@ -249,6 +278,12 @@ export function AiProvidersScreen() {
                       <p className="font-mono text-[10px] text-muted-foreground">
                         {p.lastHealthCheck ? new Date(p.lastHealthCheck).toLocaleTimeString() : 'Never'}
                       </p>
+                      {p.lastErrorCode && (
+                        <p className="max-w-32 truncate font-mono text-[10px] text-red-400" title={p.healthDetails ?? undefined}>
+                          {p.lastHttpStatusCode ? `HTTP ${p.lastHttpStatusCode} · ` : ''}
+                          {p.lastErrorCode}
+                        </p>
+                      )}
                     </div>
                   </td>
 
@@ -271,7 +306,7 @@ export function AiProvidersScreen() {
                       <Button
                         size="sm"
                         variant="outline"
-                        title="Run Synthetic Health Check"
+                        title="Run Provider Health Check"
                         onClick={() => handleHealthCheck(p.provider)}
                         disabled={isChecking || !p.enabled}
                       >

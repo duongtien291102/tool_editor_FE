@@ -1,4 +1,5 @@
 export { WorkflowPanel } from './WorkflowPanel';
+export { useProductionFlowStore } from './productionFlowStore';
 export {
   ArtifactWorkflowState,
   ProductWorkflow,

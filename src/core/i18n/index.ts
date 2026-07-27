@@ -9,11 +9,13 @@ import viCommon from '@/locales/vi/common.json';
 import viWorkspace from '@/locales/vi/workspace.json';
 import viProjectExplorer from '@/locales/vi/project-explorer.json';
 import viScriptEditor from '@/locales/vi/script-editor.json';
+import viEditor from '@/locales/vi/editor.json';
 
 import enCommon from '@/locales/en/common.json';
 import enWorkspace from '@/locales/en/workspace.json';
 import enProjectExplorer from '@/locales/en/project-explorer.json';
 import enScriptEditor from '@/locales/en/script-editor.json';
+import enEditor from '@/locales/en/editor.json';
 
 const resources = {
   vi: {
@@ -21,6 +23,7 @@ const resources = {
     workspace: viWorkspace,
     projectExplorer: viProjectExplorer,
     scriptEditor: viScriptEditor,
+    editor: viEditor,
     ...viRoot,
     common: { ...viCommon, ...viRoot.common },
   },
@@ -29,6 +32,7 @@ const resources = {
     workspace: enWorkspace,
     projectExplorer: enProjectExplorer,
     scriptEditor: enScriptEditor,
+    editor: enEditor,
     ...enRoot,
     common: { ...enCommon, ...enRoot.common },
   },

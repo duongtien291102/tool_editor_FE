@@ -59,9 +59,47 @@
     "readyForExport": "Ready for export",
     "recentProjects": "Recent projects",
     "activeCount": "active",
+    "activeProjectCount": "{{count}} active",
+    "needAttentionCount": "{{count}} need attention",
+    "activity": "Activity",
+    "openJobCenter": "Open Job Center",
     "noProjectsTitle": "No projects yet",
     "noProjectsDesc": "Create the first project in this workspace.",
     "createProject": "Create project"
+  },
+  "time": {
+    "lessThanHourAgo": "Less than an hour ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+  "projectOverview": {
+    "editProject": "Edit project",
+    "openEditor": "Open editor",
+    "editorialFormat": "Editorial format",
+    "assets": "Assets",
+    "linkedAssets": "{{count}} linked",
+    "operations": "Operations",
+    "runningOperations": "{{count}} running",
+    "projectStructure": "Project structure",
+    "projectStructureDescription": "The production objects prepared for editing.",
+    "modules": {
+      "script": "Script",
+      "scriptMeta": "Draft / Autosave",
+      "storyboard": "Storyboard",
+      "storyboardMeta": "1 board / 6 scenes",
+      "timeline": "Timeline",
+      "timelineMeta": "Main sequence / Draft",
+      "assetCollection": "Asset collection",
+      "references": "{{count}} references"
+    },
+    "lifecycle": "Lifecycle",
+    "updated": "Updated",
+    "version": "Version",
+    "archiveProject": "Archive project",
+    "editProjectDescription": "Update project metadata without changing timeline data.",
+    "name": "Name",
+    "description": "Description",
+    "saveProject": "Save project"
   },
   "commercial": {
     "title": "Commercial & SaaS Hub",

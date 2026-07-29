@@ -59,9 +59,47 @@
     "readyForExport": "Sẵn sàng xuất file",
     "recentProjects": "Dự án gần đây",
     "activeCount": "đang hoạt động",
+    "activeProjectCount": "{{count}} đang hoạt động",
+    "needAttentionCount": "{{count}} cần chú ý",
+    "activity": "Hoạt động",
+    "openJobCenter": "Mở trung tâm tác vụ",
     "noProjectsTitle": "Chưa có dự án nào",
     "noProjectsDesc": "Tạo dự án đầu tiên trong không gian làm việc này.",
     "createProject": "Tạo dự án"
+  },
+  "time": {
+    "lessThanHourAgo": "Chưa đầy một giờ trước",
+    "hoursAgo": "{{count}} giờ trước",
+    "daysAgo": "{{count}} ngày trước"
+  },
+  "projectOverview": {
+    "editProject": "Sửa dự án",
+    "openEditor": "Mở trình biên tập",
+    "editorialFormat": "Định dạng dựng phim",
+    "assets": "Tài nguyên",
+    "linkedAssets": "{{count}} đã liên kết",
+    "operations": "Tác vụ",
+    "runningOperations": "{{count}} đang chạy",
+    "projectStructure": "Cấu trúc dự án",
+    "projectStructureDescription": "Các đối tượng sản xuất đã chuẩn bị để chỉnh sửa.",
+    "modules": {
+      "script": "Kịch bản",
+      "scriptMeta": "Bản nháp / Tự động lưu",
+      "storyboard": "Bảng phân cảnh",
+      "storyboardMeta": "1 bảng / 6 cảnh",
+      "timeline": "Timeline",
+      "timelineMeta": "Chuỗi chính / Bản nháp",
+      "assetCollection": "Bộ sưu tập tài nguyên",
+      "references": "{{count}} tham chiếu"
+    },
+    "lifecycle": "Vòng đời",
+    "updated": "Cập nhật",
+    "version": "Phiên bản",
+    "archiveProject": "Lưu trữ dự án",
+    "editProjectDescription": "Cập nhật thông tin dự án mà không thay đổi dữ liệu timeline.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "saveProject": "Lưu dự án"
   },
   "commercial": {
     "title": "Trung tâm thương mại & SaaS",

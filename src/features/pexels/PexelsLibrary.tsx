@@ -1,4 +1,5 @@
 import {
+  Check,
   Download,
   Eye,
   Image as ImageIcon,
@@ -69,6 +70,7 @@ function bestVideoFile(video: Video) {
 export function PexelsLibrary() {
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const projectId = useStudioStore((state) => state.currentProjectId);
+  const assets = useStudioStore((state) => state.assets);
   const addImportedStockAsset = useStudioStore((state) => state.addImportedStockAsset);
   const notify = useStudioStore((state) => state.notify);
   const [searchText, setSearchText] = useState('creative studio');
@@ -87,8 +89,19 @@ export function PexelsLibrary() {
   const [error, setError] = useState(false);
   const [preview, setPreview] = useState<PexelsItem | null>(null);
   const [importing, setImporting] = useState<Set<string>>(() => new Set());
+  const [localAddedKeys, setLocalAddedKeys] = useState<Set<string>>(() => new Set());
   const requestController = useRef<AbortController | null>(null);
   const loadMoreTrigger = useRef<HTMLDivElement | null>(null);
+
+  const addedUrls = useMemo(() => {
+    const set = new Set<string>();
+    for (const asset of assets) {
+      if (asset.attribution?.sourceUrl) {
+        set.add(asset.attribution.sourceUrl);
+      }
+    }
+    return set;
+  }, [assets]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -204,6 +217,7 @@ export function PexelsLibrary() {
           photographer: imported.photographer,
           sourceUrl: imported.pexelsUrl,
         });
+        setLocalAddedKeys((current) => new Set(current).add(key));
       } catch {
         notify('Unable to import this Pexels asset. Please try again.');
       } finally {
@@ -368,17 +382,22 @@ export function PexelsLibrary() {
       ) : (
         <>
           <div className="columns-1 gap-3 sm:columns-2 xl:columns-3 2xl:columns-4">
-            {items.map((item) => (
-              <PexelsCard
-                key={itemKey(item)}
-                item={item}
-                importing={importing.has(itemKey(item))}
-                onPreview={setPreview}
-                onAdd={(selectedItem) => {
-                  void addToTimeline(selectedItem);
-                }}
-              />
-            ))}
+            {items.map((item) => {
+              const key = itemKey(item);
+              const isAdded = localAddedKeys.has(key) || addedUrls.has(item.data.url);
+              return (
+                <PexelsCard
+                  key={key}
+                  item={item}
+                  importing={importing.has(key)}
+                  isAdded={isAdded}
+                  onPreview={setPreview}
+                  onAdd={(selectedItem) => {
+                    void addToTimeline(selectedItem);
+                  }}
+                />
+              );
+            })}
           </div>
           <div ref={loadMoreTrigger} className="h-8" aria-hidden="true" />
           {loadingMore && (
@@ -394,6 +413,7 @@ export function PexelsLibrary() {
         <PexelsPreview
           item={preview}
           importing={importing.has(itemKey(preview))}
+          isAdded={localAddedKeys.has(itemKey(preview)) || addedUrls.has(preview.data.url)}
           onClose={() => setPreview(null)}
           onAdd={(selectedItem) => {
             void addToTimeline(selectedItem);
@@ -407,19 +427,47 @@ export function PexelsLibrary() {
 const PexelsCard = memo(function PexelsCard({
   item,
   importing,
+  isAdded,
   onPreview,
   onAdd,
 }: {
   item: PexelsItem;
   importing: boolean;
+  isAdded: boolean;
   onPreview: (item: PexelsItem) => void;
   onAdd: (item: PexelsItem) => void;
 }) {
   const data = item.data;
   const thumbnail = item.kind === 'photo' ? item.data.sources.medium : item.data.image;
   return (
-    <article className="group mb-3 break-inside-avoid overflow-hidden rounded-xl border border-border bg-card [content-visibility:auto] [contain-intrinsic-size:260px]">
+    <article
+      draggable={true}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = 'copy';
+        const payload = {
+          kind: item.kind,
+          name:
+            item.kind === 'photo'
+              ? item.data.alt || 'Pexels Photo'
+              : `Video by ${item.data.photographer.name}`,
+          pexelsId: item.data.id,
+          url: item.kind === 'photo' ? item.data.sources.medium : item.data.image,
+        };
+        event.dataTransfer.setData('application/json', JSON.stringify(payload));
+        event.dataTransfer.setData('text/plain', payload.name);
+      }}
+      className={cn(
+        'group mb-3 cursor-grab break-inside-avoid overflow-hidden rounded-xl border bg-card transition-all duration-200 active:cursor-grabbing [content-visibility:auto] [contain-intrinsic-size:260px]',
+        isAdded ? 'border-emerald-500/40 shadow-sm shadow-emerald-950/20' : 'border-border',
+      )}
+    >
       <div className="relative overflow-hidden bg-muted">
+        {isAdded && (
+          <span className="absolute left-2 top-2 z-10 flex items-center gap-1 rounded-md bg-emerald-600/90 px-2 py-0.5 text-[11px] font-semibold text-white shadow-md backdrop-blur-sm">
+            <Check className="size-3.5" />
+            Added
+          </span>
+        )}
         <button
           type="button"
           className="block w-full text-left"
@@ -449,11 +497,14 @@ const PexelsCard = memo(function PexelsCard({
           </a>
           <button
             type="button"
-            className="grid size-8 place-items-center rounded-md bg-black/70 text-white hover:bg-black"
+            className={cn(
+              'grid size-8 place-items-center rounded-md text-white transition-colors',
+              isAdded ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-black/70 hover:bg-black',
+            )}
             onClick={() => onAdd(item)}
-            aria-label="Add to timeline"
+            aria-label={isAdded ? 'Added to timeline' : 'Add to timeline'}
           >
-            <Plus className="size-3.5" />
+            {isAdded ? <Check className="size-3.5" /> : <Plus className="size-3.5" />}
           </button>
           <button
             type="button"
@@ -488,10 +539,23 @@ const PexelsCard = memo(function PexelsCard({
             <Eye className="mr-1.5 size-3.5" />
             Preview
           </Button>
-          <Button size="sm" disabled={importing} onClick={() => onAdd(item)}>
-            <Plus className="mr-1.5 size-3.5" />
-            {importing ? 'Importing…' : 'Add'}
-          </Button>
+          {isAdded ? (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={importing}
+              className="border-emerald-500/40 bg-emerald-500/10 font-semibold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
+              onClick={() => onAdd(item)}
+            >
+              <Check className="mr-1.5 size-3.5 text-emerald-400" />
+              {importing ? 'Importing…' : 'Added'}
+            </Button>
+          ) : (
+            <Button size="sm" disabled={importing} onClick={() => onAdd(item)}>
+              <Plus className="mr-1.5 size-3.5" />
+              {importing ? 'Importing…' : 'Add'}
+            </Button>
+          )}
         </div>
       </div>
     </article>
@@ -501,11 +565,13 @@ const PexelsCard = memo(function PexelsCard({
 function PexelsPreview({
   item,
   importing,
+  isAdded,
   onClose,
   onAdd,
 }: {
   item: PexelsItem;
   importing: boolean;
+  isAdded: boolean;
   onClose: () => void;
   onAdd: (item: PexelsItem) => void;
 }) {
@@ -593,10 +659,22 @@ function PexelsPreview({
               Pexels License
             </a>
           </div>
-          <Button disabled={importing} onClick={() => onAdd(item)}>
-            <Plus className="mr-2 size-4" />
-            {importing ? 'Importing…' : 'Add to Timeline'}
-          </Button>
+          {isAdded ? (
+            <Button
+              disabled={importing}
+              variant="outline"
+              className="border-emerald-500/40 bg-emerald-500/10 font-semibold text-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-300"
+              onClick={() => onAdd(item)}
+            >
+              <Check className="mr-2 size-4 text-emerald-400" />
+              {importing ? 'Importing…' : 'Added to Timeline'}
+            </Button>
+          ) : (
+            <Button disabled={importing} onClick={() => onAdd(item)}>
+              <Plus className="mr-2 size-4" />
+              {importing ? 'Importing…' : 'Add to Timeline'}
+            </Button>
+          )}
         </footer>
       </div>
     </div>

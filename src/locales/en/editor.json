@@ -74,11 +74,11 @@
       "audience": "Audience",
       "structure": "Structure",
       "scenes": "Scenes",
-      "duration": "Duration"
-      ,"status": "Status"
-      ,"checks": "Checks"
-      ,"source": "Source"
-      ,"generationSession": "Generation session"
+      "duration": "Duration",
+      "status": "Status",
+      "checks": "Checks",
+      "source": "Source",
+      "generationSession": "Generation session"
     },
     "values": {
       "summary": "A concise visual story built from a single creative direction.",
@@ -96,5 +96,70 @@
       "notPrepared": "Not sent to generation",
       "notCreated": "No session created"
     }
+  },
+  "assetPipeline": {
+    "versionHistory": "Version history",
+    "current": "Current",
+    "tabs": {
+      "Preview": "Preview",
+      "Versions": "Versions",
+      "Metadata": "Metadata",
+      "Dependency": "Dependency"
+    },
+    "actions": {
+      "restore": "Restore",
+      "openPreview": "Open preview"
+    },
+    "messages": {
+      "restored": "Restored v{{sourceVersion}} as new v{{restoredVersion}}"
+    },
+    "fields": {
+      "provider": "Provider",
+      "workflow": "Workflow",
+      "tags": "Tags"
+    },
+    "metadata": {
+      "mimeType": "MIME type",
+      "size": "Size",
+      "resolution": "Resolution",
+      "duration": "Duration",
+      "checksum": "Checksum"
+    },
+    "preview": {
+      "status": "Status",
+      "currentVersion": "Current version",
+      "reference": "Reference",
+      "storage": "Storage"
+    },
+    "previewStatuses": {
+      "ready": "Ready"
+    },
+    "storage": {
+      "mock-repository": "Mock repository"
+    },
+    "types": {
+      "image": "Image",
+      "video": "Video",
+      "audio": "Audio",
+      "subtitle": "Subtitle",
+      "prompt": "Prompt",
+      "json": "JSON",
+      "srt": "SRT",
+      "markdown": "Markdown",
+      "thumbnail": "Thumbnail",
+      "voice": "Voice",
+      "reference-image": "Reference Image",
+      "generated-asset": "Generated Asset"
+    },
+    "sources": {
+      "import": "Import",
+      "metadata-review": "Metadata review",
+      "quality-review": "Quality review",
+      "restore": "Restored from {{id}}"
+    },
+    "workflow": {
+      "quality-review": "Quality review"
+    },
+    "emptyDependencies": "No dependency edges."
   }
 }

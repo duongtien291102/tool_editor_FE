@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { apiClient, responseData } from '@/api/httpClient';
 
 export type ProjectStatus = 'Draft' | 'Active' | 'Archived';
 export type JobStatus = 'Queued' | 'Running' | 'Success' | 'Failed';
@@ -10,12 +10,6 @@ export interface StudioUser {
   name: string;
   email: string;
   role: 'Owner';
-}
-
-export interface StudioSession {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
 }
 
 export interface WorkspaceRecord {
@@ -114,6 +108,7 @@ interface EditorState {
   zoom: number;
   selectedClipId: string | null;
   leftPanel: 'workflow' | 'assets' | 'jobs';
+  isPlaying: boolean;
 }
 
 interface UiState {
@@ -125,7 +120,6 @@ interface UiState {
 
 interface StudioState {
   user: StudioUser | null;
-  session: StudioSession | null;
   workspaces: WorkspaceRecord[];
   currentWorkspaceId: string | null;
   projects: ProjectRecord[];
@@ -138,19 +132,21 @@ interface StudioState {
   featureFlags: Record<string, boolean>;
   editor: EditorState;
   ui: UiState;
-  login: (email: string, password: string) => boolean;
-  refreshSession: () => boolean;
-  logout: () => void;
-  createWorkspace: (name: string) => WorkspaceRecord;
+  replaceServerCatalog: (catalog: {
+    workspaces: WorkspaceRecord[];
+    projects: ProjectRecord[];
+    providers: ProviderRecord[];
+  }) => void;
+  createWorkspace: (name: string) => Promise<WorkspaceRecord>;
   selectWorkspace: (id: string) => void;
   createProject: (
     input: Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>,
-  ) => ProjectRecord | null;
+  ) => Promise<ProjectRecord | null>;
   updateProject: (
     id: string,
     changes: Partial<Pick<ProjectRecord, 'name' | 'description' | 'aspectRatio' | 'frameRate'>>,
-  ) => void;
-  archiveProject: (id: string) => void;
+  ) => Promise<void>;
+  archiveProject: (id: string) => Promise<void>;
   selectProject: (id: string) => void;
   retryJob: (id: string) => void;
   addImportedStockAsset: (asset: ImportedStockAsset) => void;
@@ -170,422 +166,202 @@ const formatBytes = (bytes: number) =>
 const formatDuration = (seconds: number) =>
   `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(Math.round(seconds % 60)).padStart(2, '0')}`;
 
-const initialWorkspaces: WorkspaceRecord[] = [
-  { id: 'ws-studio', name: 'Northstar Studio', ownerId: 'user-demo', createdAt: now() },
-  { id: 'ws-lab', name: 'Concept Lab', ownerId: 'user-demo', createdAt: now() },
-];
+const initialWorkspaces: WorkspaceRecord[] = [];
+const initialProjects: ProjectRecord[] = [];
+const initialAssets: AssetRecord[] = [];
+const initialJobs: JobRecord[] = [];
+const initialRenders: RenderRecord[] = [];
+const providers: ProviderRecord[] = [];
 
-const initialProjects: ProjectRecord[] = [
-  {
-    id: 'project-atlas',
-    workspaceId: 'ws-studio',
-    name: 'Atlas Brand Film',
-    description: 'Launch film exploring movement, material and modern craft.',
-    aspectRatio: '16:9',
-    frameRate: 24,
-    status: 'Active',
-    updatedAt: '2026-07-25T01:18:00.000Z',
+export const useStudioStore = create<StudioState>()((set, get) => ({
+  user: null,
+  workspaces: initialWorkspaces,
+  currentWorkspaceId: '',
+  projects: initialProjects,
+  currentProjectId: '',
+  assets: initialAssets,
+  importedTimelineClips: [],
+  jobs: initialJobs,
+  renders: initialRenders,
+  providers,
+  featureFlags: {
+    compactTimeline: true,
+    assetListView: true,
+    providerRegistry: true,
   },
-  {
-    id: 'project-kinetic',
-    workspaceId: 'ws-studio',
-    name: 'Kinetic Product Cut',
-    description: 'Short product sequence prepared for social delivery.',
-    aspectRatio: '9:16',
-    frameRate: 30,
-    status: 'Draft',
-    updatedAt: '2026-07-24T13:40:00.000Z',
+  editor: {
+    activeTool: 'select',
+    playhead: 12.4,
+    zoom: 1,
+    selectedClipId: '',
+    leftPanel: 'workflow',
+    isPlaying: false,
   },
-  {
-    id: 'project-archive',
-    workspaceId: 'ws-lab',
-    name: 'Material Study',
-    description: 'A compact visual study for an internal concept review.',
-    aspectRatio: '1:1',
-    frameRate: 25,
-    status: 'Draft',
-    updatedAt: '2026-07-23T09:12:00.000Z',
+  ui: {
+    sidebarCollapsed: false,
+    mobileNavigationOpen: false,
+    assetView: 'grid',
+    toast: null,
   },
-];
-
-const initialAssets: AssetRecord[] = [
-  {
-    id: 'asset-1',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    folder: 'Footage',
-    name: 'city-dawn-master.mov',
-    kind: 'Video',
-    size: '184 MB',
-    duration: '00:18',
-    color: '#31596f',
-  },
-  {
-    id: 'asset-2',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    folder: 'Footage',
-    name: 'product-turntable.mp4',
-    kind: 'Video',
-    size: '92 MB',
-    duration: '00:12',
-    color: '#6b5140',
-  },
-  {
-    id: 'asset-3',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    folder: 'References',
-    name: 'material-reference.jpg',
-    kind: 'Image',
-    size: '3.8 MB',
-    color: '#665f52',
-  },
-  {
-    id: 'asset-4',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    folder: 'Audio',
-    name: 'pulse-score.wav',
-    kind: 'Audio',
-    size: '36 MB',
-    duration: '01:24',
-    color: '#445f55',
-  },
-  {
-    id: 'asset-5',
-    workspaceId: 'ws-studio',
-    folder: 'Shared',
-    name: 'studio-logo.png',
-    kind: 'Image',
-    size: '820 KB',
-    color: '#314d5a',
-  },
-  {
-    id: 'asset-6',
-    workspaceId: 'ws-lab',
-    projectId: 'project-archive',
-    folder: 'References',
-    name: 'surface-study-02.jpg',
-    kind: 'Image',
-    size: '2.1 MB',
-    color: '#555c65',
-  },
-];
-
-const initialJobs: JobRecord[] = [
-  {
-    id: 'job-01',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    type: 'Asset ingest',
-    subject: 'city-dawn-master.mov',
-    status: 'Success',
-    progress: 100,
-    createdAt: '2026-07-25T01:04:00.000Z',
-  },
-  {
-    id: 'job-02',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    type: 'Proxy',
-    subject: 'product-turntable.mp4',
-    status: 'Running',
-    progress: 68,
-    createdAt: '2026-07-25T01:12:00.000Z',
-  },
-  {
-    id: 'job-03',
-    workspaceId: 'ws-studio',
-    projectId: 'project-kinetic',
-    type: 'Thumbnail',
-    subject: 'social-cut-v2.mov',
-    status: 'Queued',
-    progress: 0,
-    createdAt: '2026-07-25T01:16:00.000Z',
-  },
-  {
-    id: 'job-04',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    type: 'Waveform',
-    subject: 'pulse-score.wav',
-    status: 'Failed',
-    progress: 42,
-    createdAt: '2026-07-24T17:28:00.000Z',
-  },
-];
-
-const initialRenders: RenderRecord[] = [
-  {
-    id: 'render-01',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    projectName: 'Atlas Brand Film',
-    preset: '4K Master',
-    status: 'Running',
-    progress: 31,
-    createdAt: '2026-07-25T01:20:00.000Z',
-  },
-  {
-    id: 'render-02',
-    workspaceId: 'ws-studio',
-    projectId: 'project-atlas',
-    projectName: 'Atlas Brand Film',
-    preset: 'Review 1080p',
-    status: 'Success',
-    progress: 100,
-    createdAt: '2026-07-24T16:20:00.000Z',
-  },
-  {
-    id: 'render-03',
-    workspaceId: 'ws-studio',
-    projectId: 'project-kinetic',
-    projectName: 'Kinetic Product Cut',
-    preset: 'Vertical Preview',
-    status: 'Failed',
-    progress: 76,
-    createdAt: '2026-07-23T10:03:00.000Z',
-  },
-];
-
-const providers: ProviderRecord[] = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    category: 'Multimodal',
-    status: 'Available',
-    capabilities: ['Registry only'],
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini',
-    category: 'Multimodal',
-    status: 'Available',
-    capabilities: ['Registry only'],
-  },
-  {
-    id: 'veo',
-    name: 'Veo',
-    category: 'Video',
-    status: 'Available',
-    capabilities: ['Registry only'],
-  },
-  {
-    id: 'kling',
-    name: 'Kling',
-    category: 'Video',
-    status: 'Disabled',
-    capabilities: ['Registry only'],
-  },
-  {
-    id: 'runway',
-    name: 'Runway',
-    category: 'Video',
-    status: 'Available',
-    capabilities: ['Registry only'],
-  },
-];
-
-export const useStudioStore = create<StudioState>()(
-  persist(
-    (set, get) => ({
-      user: null,
-      session: null,
-      workspaces: initialWorkspaces,
-      currentWorkspaceId: 'ws-studio',
-      projects: initialProjects,
-      currentProjectId: 'project-atlas',
-      assets: initialAssets,
-      importedTimelineClips: [],
-      jobs: initialJobs,
-      renders: initialRenders,
-      providers,
-      featureFlags: {
-        compactTimeline: true,
-        assetListView: true,
-        providerRegistry: true,
-      },
-      editor: {
-        activeTool: 'select',
-        playhead: 12.4,
-        zoom: 1,
-        selectedClipId: 'clip-product',
-        leftPanel: 'workflow',
-      },
-      ui: {
-        sidebarCollapsed: false,
-        mobileNavigationOpen: false,
-        assetView: 'grid',
-        toast: null,
-      },
-      login: (email, password) => {
-        if (!email.trim() || !password.trim()) return false;
-        const user: StudioUser = {
-          id: 'user-demo',
-          name: email.split('@')[0] || 'Studio Owner',
-          email,
-          role: 'Owner',
-        };
-        const session: StudioSession = {
-          accessToken: id('access'),
-          refreshToken: id('refresh'),
-          expiresAt: Date.now() + 30 * 60 * 1000,
-        };
-        set({ user, session });
-        return true;
-      },
-      refreshSession: () => {
-        const session = get().session;
-        if (!session?.refreshToken) return false;
-        set({
-          session: {
-            ...session,
-            accessToken: id('access'),
-            expiresAt: Date.now() + 30 * 60 * 1000,
-          },
-        });
-        return true;
-      },
-      logout: () => set({ user: null, session: null }),
-      createWorkspace: (name) => {
-        const workspace: WorkspaceRecord = {
-          id: id('ws'),
-          name: name.trim(),
-          ownerId: get().user?.id ?? 'user-demo',
-          createdAt: now(),
-        };
-        set((state) => ({
-          workspaces: [...state.workspaces, workspace],
-          currentWorkspaceId: workspace.id,
-          currentProjectId: null,
-          ui: { ...state.ui, toast: 'Workspace created' },
-        }));
-        return workspace;
-      },
-      selectWorkspace: (workspaceId) => {
-        const firstProject = get().projects.find(
-          (project) => project.workspaceId === workspaceId && project.status !== 'Archived',
-        );
-        set((state) => ({
-          currentWorkspaceId: workspaceId,
-          currentProjectId: firstProject?.id ?? null,
-          ui: { ...state.ui, mobileNavigationOpen: false },
-        }));
-      },
-      createProject: (input) => {
-        const workspaceId = get().currentWorkspaceId;
-        if (!workspaceId) return null;
-        const project: ProjectRecord = {
-          id: id('project'),
-          workspaceId,
-          ...input,
-          status: 'Draft',
-          updatedAt: now(),
-        };
-        set((state) => ({
-          projects: [project, ...state.projects],
-          currentProjectId: project.id,
-          ui: { ...state.ui, toast: 'Project created' },
-        }));
-        return project;
-      },
-      updateProject: (projectId, changes) =>
-        set((state) => ({
-          projects: state.projects.map((project) =>
-            project.id === projectId ? { ...project, ...changes, updatedAt: now() } : project,
-          ),
-          ui: { ...state.ui, toast: 'Project saved' },
-        })),
-      archiveProject: (projectId) =>
-        set((state) => {
-          const projects = state.projects.map((project) =>
-            project.id === projectId
-              ? { ...project, status: 'Archived' as const, updatedAt: now() }
-              : project,
-          );
-          const next = projects.find(
-            (project) =>
-              project.workspaceId === state.currentWorkspaceId && project.status !== 'Archived',
-          );
-          return {
-            projects,
-            currentProjectId:
-              state.currentProjectId === projectId ? (next?.id ?? null) : state.currentProjectId,
-            ui: { ...state.ui, toast: 'Project archived' },
-          };
-        }),
-      selectProject: (projectId) => set({ currentProjectId: projectId }),
-      retryJob: (jobId) =>
-        set((state) => ({
-          jobs: state.jobs.map((job) =>
-            job.id === jobId ? { ...job, status: 'Queued', progress: 0, createdAt: now() } : job,
-          ),
-          ui: { ...state.ui, toast: 'Job queued for retry' },
-        })),
-      addImportedStockAsset: (imported) =>
-        set((state) => {
-          const kind = imported.mediaType === 'photo' ? ('Image' as const) : ('Video' as const);
-          const asset: AssetRecord = {
-            id: imported.assetId,
-            workspaceId: state.currentWorkspaceId ?? 'ws-studio',
-            projectId: imported.projectId,
-            folder: 'Pexels',
-            name: imported.name,
-            kind,
-            size: formatBytes(imported.sizeBytes),
-            duration: imported.durationSeconds
-              ? formatDuration(imported.durationSeconds)
-              : undefined,
-            color: '#24353b',
-            contentUrl: imported.contentUrl,
-            thumbnailUrl: imported.thumbnailUrl,
-            source: 'Pexels',
-            attribution: {
-              photographer: imported.photographer,
-              sourceUrl: imported.sourceUrl,
-            },
-          };
-          const clip: ImportedTimelineClip = {
-            id: id('clip-pexels'),
-            projectId: imported.projectId,
-            assetId: imported.assetId,
-            name: imported.name,
-            kind,
-            durationSeconds: imported.durationSeconds ?? 5,
-            thumbnailUrl: imported.thumbnailUrl,
-          };
-          return {
-            assets: [asset, ...state.assets.filter((item) => item.id !== asset.id)],
-            importedTimelineClips: [...state.importedTimelineClips, clip],
-            editor: { ...state.editor, selectedClipId: clip.id },
-            ui: { ...state.ui, toast: 'Pexels asset imported and added to timeline' },
-          };
-        }),
-      setEditor: (changes) => set((state) => ({ editor: { ...state.editor, ...changes } })),
-      setUi: (changes) => set((state) => ({ ui: { ...state.ui, ...changes } })),
-      setFeatureFlag: (key, enabled) =>
-        set((state) => ({ featureFlags: { ...state.featureFlags, [key]: enabled } })),
-      notify: (message) => set((state) => ({ ui: { ...state.ui, toast: message } })),
-      clearToast: () => set((state) => ({ ui: { ...state.ui, toast: null } })),
+  replaceServerCatalog: ({ workspaces, projects, providers }) =>
+    set((state) => {
+      const currentWorkspaceId = workspaces.some(
+        (workspace) => workspace.id === state.currentWorkspaceId,
+      )
+        ? state.currentWorkspaceId
+        : (workspaces[0]?.id ?? null);
+      const visibleProjects = projects.filter(
+        (project) => project.workspaceId === currentWorkspaceId,
+      );
+      const currentProjectId = visibleProjects.some(
+        (project) => project.id === state.currentProjectId,
+      )
+        ? state.currentProjectId
+        : (visibleProjects[0]?.id ?? null);
+      return { workspaces, projects, providers, currentWorkspaceId, currentProjectId };
     }),
-    {
-      name: 'ai-studio-foundation',
-      partialize: (state) => ({
-        user: state.user,
-        session: state.session,
-        workspaces: state.workspaces,
-        currentWorkspaceId: state.currentWorkspaceId,
-        projects: state.projects,
-        currentProjectId: state.currentProjectId,
-        assets: state.assets,
-        importedTimelineClips: state.importedTimelineClips,
-        jobs: state.jobs,
-        renders: state.renders,
-        featureFlags: state.featureFlags,
-        editor: state.editor,
-        ui: { ...state.ui, toast: null, mobileNavigationOpen: false },
+  createWorkspace: async (name) => {
+    const envelope = await responseData(
+      apiClient.post<{ data: WorkspaceRecord }>('/api/v1/workspaces', {
+        name: name.trim(),
       }),
-    },
-  ),
-);
+    );
+    const workspace = envelope.data;
+    set((state) => ({
+      workspaces: [...state.workspaces, workspace],
+      currentWorkspaceId: workspace.id,
+      currentProjectId: null,
+      ui: { ...state.ui, toast: 'Workspace created' },
+    }));
+    return workspace;
+  },
+  selectWorkspace: (workspaceId) => {
+    const firstProject = get().projects.find(
+      (project) => project.workspaceId === workspaceId && project.status !== 'Archived',
+    );
+    set((state) => ({
+      currentWorkspaceId: workspaceId,
+      currentProjectId: firstProject?.id ?? null,
+      ui: { ...state.ui, mobileNavigationOpen: false },
+    }));
+  },
+  createProject: async (input) => {
+    const workspaceId =
+      get().currentWorkspaceId || (await get().createWorkspace('My Workspace')).id;
+    const envelope = await responseData(
+      apiClient.post<{
+        data: {
+          id: string;
+          name: string;
+          description?: string;
+          status: ProjectStatus;
+          createdAt: string;
+          updatedAt?: string;
+        };
+      }>('/api/v1/projects', {
+        name: input.name,
+        description: input.description,
+      }),
+    );
+    const serverProject = envelope.data;
+    const project: ProjectRecord = {
+      id: serverProject.id,
+      workspaceId,
+      ...input,
+      status: serverProject.status,
+      updatedAt: serverProject.updatedAt ?? serverProject.createdAt,
+    };
+    set((state) => ({
+      projects: [project, ...state.projects],
+      currentProjectId: project.id,
+      ui: { ...state.ui, toast: 'Project created' },
+    }));
+    return project;
+  },
+  updateProject: async (projectId, changes) => {
+    await responseData(
+      apiClient.put(`/api/v1/projects/${encodeURIComponent(projectId)}`, {
+        name: changes.name,
+        description: changes.description,
+        thumbnail: null,
+      }),
+    );
+    set((state) => ({
+      projects: state.projects.map((project) =>
+        project.id === projectId ? { ...project, ...changes, updatedAt: now() } : project,
+      ),
+      ui: { ...state.ui, toast: 'Project saved' },
+    }));
+  },
+  archiveProject: async (projectId) => {
+    await responseData(apiClient.delete(`/api/v1/projects/${encodeURIComponent(projectId)}`));
+    set((state) => {
+      const projects = state.projects.map((project) =>
+        project.id === projectId
+          ? { ...project, status: 'Archived' as const, updatedAt: now() }
+          : project,
+      );
+      const next = projects.find(
+        (project) =>
+          project.workspaceId === state.currentWorkspaceId && project.status !== 'Archived',
+      );
+      return {
+        projects,
+        currentProjectId:
+          state.currentProjectId === projectId ? (next?.id ?? null) : state.currentProjectId,
+        ui: { ...state.ui, toast: 'Project archived' },
+      };
+    });
+  },
+  selectProject: (projectId) => set({ currentProjectId: projectId }),
+  retryJob: (jobId) =>
+    set((state) => ({
+      jobs: state.jobs.map((job) =>
+        job.id === jobId ? { ...job, status: 'Queued', progress: 0, createdAt: now() } : job,
+      ),
+      ui: { ...state.ui, toast: 'Job queued for retry' },
+    })),
+  addImportedStockAsset: (imported) =>
+    set((state) => {
+      const kind = imported.mediaType === 'photo' ? ('Image' as const) : ('Video' as const);
+      const asset: AssetRecord = {
+        id: imported.assetId,
+        workspaceId: state.currentWorkspaceId ?? 'ws-studio',
+        projectId: imported.projectId,
+        folder: 'Pexels',
+        name: imported.name,
+        kind,
+        size: formatBytes(imported.sizeBytes),
+        duration: imported.durationSeconds ? formatDuration(imported.durationSeconds) : undefined,
+        color: '#24353b',
+        contentUrl: imported.contentUrl,
+        thumbnailUrl: imported.thumbnailUrl,
+        source: 'Pexels',
+        attribution: {
+          photographer: imported.photographer,
+          sourceUrl: imported.sourceUrl,
+        },
+      };
+      const clip: ImportedTimelineClip = {
+        id: id('clip-pexels'),
+        projectId: imported.projectId,
+        assetId: imported.assetId,
+        name: imported.name,
+        kind,
+        durationSeconds: imported.durationSeconds ?? 5,
+        thumbnailUrl: imported.thumbnailUrl,
+      };
+      return {
+        assets: [asset, ...state.assets.filter((item) => item.id !== asset.id)],
+        importedTimelineClips: [...state.importedTimelineClips, clip],
+        editor: { ...state.editor, selectedClipId: clip.id },
+        ui: { ...state.ui, toast: 'Pexels asset imported and added to timeline' },
+      };
+    }),
+  setEditor: (changes) => set((state) => ({ editor: { ...state.editor, ...changes } })),
+  setUi: (changes) => set((state) => ({ ui: { ...state.ui, ...changes } })),
+  setFeatureFlag: (key, enabled) =>
+    set((state) => ({ featureFlags: { ...state.featureFlags, [key]: enabled } })),
+  notify: (message) => set((state) => ({ ui: { ...state.ui, toast: message } })),
+  clearToast: () => set((state) => ({ ui: { ...state.ui, toast: null } })),
+}));

@@ -3,16 +3,19 @@ import { GlobalErrorBoundary } from '@/components/ui/GlobalErrorBoundary';
 import { StudioApplication } from '@/features/foundation';
 import { ThemeProvider } from '@/core/theme/ThemeProvider';
 import { appLogger } from '@/core/logger';
+import { AuthProvider } from '@/features/auth';
 
 export default function App() {
   useEffect(() => {
-    appLogger.info('AI Studio foundation started', { sprint: 2, mode: 'mock' });
+    appLogger.info('AI Studio started', { storage: 'api' });
   }, []);
 
   return (
     <ThemeProvider>
       <GlobalErrorBoundary>
-        <StudioApplication />
+        <AuthProvider>
+          <StudioApplication />
+        </AuthProvider>
       </GlobalErrorBoundary>
     </ThemeProvider>
   );

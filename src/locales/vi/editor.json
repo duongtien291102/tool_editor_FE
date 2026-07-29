@@ -83,11 +83,11 @@
       "audience": "Khán giả",
       "structure": "Cấu trúc",
       "scenes": "Số cảnh",
-      "duration": "Thời lượng"
-      ,"status": "Trạng thái"
-      ,"checks": "Kiểm tra"
-      ,"source": "Nguồn"
-      ,"generationSession": "Phiên tạo"
+      "duration": "Thời lượng",
+      "status": "Trạng thái",
+      "checks": "Kiểm tra",
+      "source": "Nguồn",
+      "generationSession": "Phiên tạo"
     },
     "values": {
       "summary": "Một câu chuyện hình ảnh súc tích từ một định hướng sáng tạo.",
@@ -105,5 +105,70 @@
       "notPrepared": "Chưa chuyển sang tạo video",
       "notCreated": "Chưa tạo phiên"
     }
+  },
+  "assetPipeline": {
+    "versionHistory": "Lịch sử phiên bản",
+    "current": "Hiện tại",
+    "tabs": {
+      "Preview": "Xem trước",
+      "Versions": "Phiên bản",
+      "Metadata": "Siêu dữ liệu",
+      "Dependency": "Phụ thuộc"
+    },
+    "actions": {
+      "restore": "Khôi phục",
+      "openPreview": "Mở xem trước"
+    },
+    "messages": {
+      "restored": "Đã khôi phục v{{sourceVersion}} thành v{{restoredVersion}} mới"
+    },
+    "fields": {
+      "provider": "Nhà cung cấp",
+      "workflow": "Quy trình",
+      "tags": "Thẻ"
+    },
+    "metadata": {
+      "mimeType": "Kiểu MIME",
+      "size": "Dung lượng",
+      "resolution": "Độ phân giải",
+      "duration": "Thời lượng",
+      "checksum": "Mã kiểm tra"
+    },
+    "preview": {
+      "status": "Trạng thái",
+      "currentVersion": "Phiên bản hiện tại",
+      "reference": "Tham chiếu",
+      "storage": "Kho lưu trữ"
+    },
+    "previewStatuses": {
+      "ready": "Sẵn sàng"
+    },
+    "storage": {
+      "mock-repository": "Kho mô phỏng"
+    },
+    "types": {
+      "image": "Hình ảnh",
+      "video": "Video",
+      "audio": "Âm thanh",
+      "subtitle": "Phụ đề",
+      "prompt": "Prompt",
+      "json": "JSON",
+      "srt": "SRT",
+      "markdown": "Markdown",
+      "thumbnail": "Ảnh thu nhỏ",
+      "voice": "Giọng đọc",
+      "reference-image": "Ảnh tham chiếu",
+      "generated-asset": "Tài nguyên đã tạo"
+    },
+    "sources": {
+      "import": "Nhập",
+      "metadata-review": "Duyệt siêu dữ liệu",
+      "quality-review": "Duyệt chất lượng",
+      "restore": "Khôi phục từ {{id}}"
+    },
+    "workflow": {
+      "quality-review": "Duyệt chất lượng"
+    },
+    "emptyDependencies": "Không có liên kết phụ thuộc."
   }
 }

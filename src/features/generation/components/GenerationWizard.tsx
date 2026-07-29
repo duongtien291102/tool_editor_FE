@@ -1,7 +1,8 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { apiClient, responseData } from '@/api/httpClient';
 import { generationService } from '../services/generationService';
 import type { GenerationSession, GenerationStepArtifact } from '../types';
-import { useProductionFlowStore } from '@/features/workflow/productionFlowStore';
+import { useProductionFlowStore } from '@/features/workflow';
 
 interface GenerationWizardProps {
   onGenerationComplete?: (session: GenerationSession) => void;
@@ -10,24 +11,20 @@ interface GenerationWizardProps {
 
 export const GenerationWizard: React.FC<GenerationWizardProps> = ({
   onGenerationComplete,
-  onOpenDownloadCenter
+  onOpenDownloadCenter,
 }) => {
-  const [sourceProjectId] = useState(
-    () => localStorage.getItem('ai-studio-generation-project') ?? 'proj-default',
-  );
-  const syncProductionGeneration = useProductionFlowStore((state) => state.syncGeneration);
-  const markProductionStarted = useProductionFlowStore(
-    (state) => state.markGenerationStarted,
-  );
-  const [prompt, setPrompt] = useState(() => {
-    const scriptDraft = localStorage.getItem('ai-studio-generation-draft');
-    if (scriptDraft) {
-      localStorage.removeItem('ai-studio-generation-draft');
-      localStorage.removeItem('ai-studio-generation-project');
-      return scriptDraft;
-    }
-    return 'Create a high-energy 15-second cinematic promo for an AI Video Studio platform.';
+  const legacyDraft = useRef(localStorage.getItem('ai-studio-generation-draft'));
+  const [sourceProjectId] = useState(() => {
+    const queryProjectId = new URLSearchParams(window.location.search).get('projectId');
+    return queryProjectId ?? localStorage.getItem('ai-studio-generation-project') ?? 'proj-default';
   });
+  const syncProductionGeneration = useProductionFlowStore((state) => state.syncGeneration);
+  const markProductionStarted = useProductionFlowStore((state) => state.markGenerationStarted);
+  const [prompt, setPrompt] = useState(
+    () =>
+      legacyDraft.current ??
+      'Create a high-energy 15-second cinematic promo for an AI Video Studio platform.',
+  );
   const [workflowType, setWorkflowType] = useState('Commercial Promo');
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentSession, setCurrentSession] = useState<GenerationSession | null>(null);
@@ -35,6 +32,40 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
   const submissionInFlight = useRef(false);
 
   const workflows = ['Commercial Promo', 'Social Media Reel', 'Product Showcase', 'Movie Teaser'];
+
+  useEffect(() => {
+    if (legacyDraft.current || sourceProjectId === 'proj-default') return;
+    void responseData(
+      apiClient.get<{
+        success: boolean;
+        data?: {
+          title?: string;
+          body?: string;
+          scenes?: Array<{ title: string; narration: string; visual: string }>;
+        };
+      }>(`/api/v1/generation/script-workspaces/${encodeURIComponent(sourceProjectId)}`),
+    )
+      .then((envelope) => {
+        if (!envelope.data) return;
+        const workspace = envelope.data;
+        const sceneText = (workspace.scenes ?? [])
+          .map(
+            (scene, index) =>
+              `${index + 1}. ${scene.title}\nLời thoại: ${scene.narration}\nHình ảnh: ${scene.visual}`,
+          )
+          .join('\n\n');
+        setPrompt(
+          [
+            workspace.title && `Tên kịch bản: ${workspace.title}`,
+            workspace.body && `Kịch bản tổng:\n${workspace.body}`,
+            sceneText && `Phân cảnh:\n${sceneText}`,
+          ]
+            .filter(Boolean)
+            .join('\n\n'),
+        );
+      })
+      .catch(() => undefined);
+  }, [sourceProjectId]);
 
   const handleStartGeneration = async () => {
     if (!prompt.trim() || submissionInFlight.current) return;
@@ -44,18 +75,22 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
     setGenerationError(null);
     let sessionId: string | undefined;
     try {
-      const session = await generationService.createSession(
-        prompt,
-        workflowType,
-        sourceProjectId,
-      );
+      const session = await generationService.createSession(prompt, workflowType, sourceProjectId);
+      if (legacyDraft.current) {
+        localStorage.removeItem('ai-studio-generation-draft');
+        localStorage.removeItem('ai-studio-generation-project');
+        legacyDraft.current = null;
+      }
       sessionId = session.id;
       setCurrentSession(session);
       markProductionStarted(sourceProjectId, session.id);
 
-      const completedSession = await generationService.startGeneration(session.id, updatedSession => {
-        setCurrentSession({ ...updatedSession });
-      });
+      const completedSession = await generationService.startGeneration(
+        session.id,
+        (updatedSession) => {
+          setCurrentSession({ ...updatedSession });
+        },
+      );
 
       setCurrentSession(completedSession);
       syncProductionGeneration(sourceProjectId, completedSession);
@@ -82,7 +117,8 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
         <div>
           <h2 className="text-2xl font-extrabold text-white">AI Video Generation Wizard</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Transform ideas into a complete video production pipeline with storyboards, prompt packs, timeline drafts, and render jobs.
+            Transform ideas into a complete video production pipeline with storyboards, prompt
+            packs, timeline drafts, and render jobs.
           </p>
         </div>
 
@@ -93,7 +129,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             </label>
             <textarea
               value={prompt}
-              onChange={e => setPrompt(e.target.value)}
+              onChange={(e) => setPrompt(e.target.value)}
               disabled={isGenerating}
               rows={3}
               className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-4 text-sm text-white outline-none"
@@ -107,7 +143,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                 Workflow Preset
               </label>
               <div className="flex flex-wrap gap-2">
-                {workflows.map(wf => (
+                {workflows.map((wf) => (
                   <button
                     key={wf}
                     onClick={() => setWorkflowType(wf)}
@@ -125,7 +161,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             </div>
 
             <button
-              onClick={handleStartGeneration}
+              onClick={() => void handleStartGeneration()}
               disabled={isGenerating || !prompt.trim()}
               className={`px-8 py-3 rounded-xl font-bold text-sm shadow-lg transition-all ${
                 isGenerating || !prompt.trim()
@@ -157,43 +193,65 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                 </span>
                 <span className="text-xs text-slate-500">Session ID: {currentSession.id}</span>
               </div>
-              <p className="text-sm font-semibold text-white mt-1 line-clamp-1">{currentSession.prompt}</p>
+              <p className="text-sm font-semibold text-white mt-1 line-clamp-1">
+                {currentSession.prompt}
+              </p>
             </div>
 
             <div className="flex items-center gap-4 text-xs">
               <div>
                 <span className="text-slate-400 block">Total Cost</span>
-                <span className="text-amber-400 font-extrabold text-base">{currentSession.totalCreditsConsumed} Credits</span>
+                <span className="text-amber-400 font-extrabold text-base">
+                  {currentSession.totalCreditsConsumed} Credits
+                </span>
               </div>
               <div>
                 <span className="text-slate-400 block">Artifacts</span>
-                <span className="text-indigo-400 font-extrabold text-base">{currentSession.artifacts.length} Files</span>
+                <span className="text-indigo-400 font-extrabold text-base">
+                  {currentSession.artifacts.length} Files
+                </span>
               </div>
             </div>
           </div>
 
           {/* Pipeline Step Executions List */}
           <div className="space-y-3">
-            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Pipeline Execution Log</h3>
+            <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
+              Pipeline Execution Log
+            </h3>
             {currentSession.steps.map((step, idx) => (
-              <div key={idx} className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2">
+              <div
+                key={idx}
+                className="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-2"
+              >
                 <div className="flex justify-between items-center text-xs">
                   <div className="flex items-center gap-2">
                     <span className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 grid place-items-center font-bold text-[10px]">
                       ✓
                     </span>
                     <span className="font-bold text-white text-sm">{step.stepName}</span>
-                    <span className="text-slate-400">({step.providerId} / {step.modelId})</span>
+                    <span className="text-slate-400">
+                      ({step.providerId} / {step.modelId})
+                    </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs">
-                    <span className="text-amber-400 font-semibold">{step.creditsConsumed} Credits</span>
+                    <span className="text-amber-400 font-semibold">
+                      {step.creditsConsumed} Credits
+                    </span>
                     <span className="text-slate-500">{step.durationMs}ms</span>
                   </div>
                 </div>
 
                 <div className="text-xs text-slate-400 pl-7 flex gap-4">
-                  <span>Input: <strong className="text-slate-300">{step.inputPayload}</strong></span>
-                  <span>Output: <strong className="text-indigo-300">{step.outputPayload.substring(0, 60)}...</strong></span>
+                  <span>
+                    Input: <strong className="text-slate-300">{step.inputPayload}</strong>
+                  </span>
+                  <span>
+                    Output:{' '}
+                    <strong className="text-indigo-300">
+                      {step.outputPayload.substring(0, 60)}...
+                    </strong>
+                  </span>
                 </div>
               </div>
             ))}
@@ -204,7 +262,11 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
             <div className="pt-4 border-t border-slate-800 space-y-4">
               <h3 className="text-lg font-bold text-white">Generation Result Preview</h3>
               <div className="bg-black rounded-xl overflow-hidden border border-slate-800 max-w-3xl mx-auto">
-                <video src={currentSession.finalVideoUrl} controls className="w-full max-h-[50vh]" />
+                <video
+                  src={currentSession.finalVideoUrl}
+                  controls
+                  className="w-full max-h-[50vh]"
+                />
               </div>
 
               <div className="flex justify-center gap-4">

@@ -66,15 +66,14 @@ import {
   type AssetKind,
   type JobStatus,
   type ProjectRecord,
+  type ProjectStatus,
+  type ProviderRecord,
   useStudioStore,
 } from '@/state/studioStore';
+import { apiClient, getApiError, responseData } from '@/api/httpClient';
 import { cn } from '@/core/utils/cn';
 import { appLogger } from '@/core/logger';
-import { WorkflowPanel } from '@/features/workflow';
-import {
-  useProductionFlowStore,
-  type ProductionScene,
-} from '@/features/workflow/productionFlowStore';
+import { WorkflowPanel, useProductionFlowStore, type ProductionScene } from '@/features/workflow';
 import {
   AssetVersionPanel,
   CompactAssetVersions,
@@ -86,6 +85,7 @@ import {
 import { AiProvidersScreen } from '@/features/ai-providers';
 import { CommercialScreen, type CommercialTab } from '@/features/commercial';
 import { GenerationScreen } from '@/features/generation';
+import { LoginPage, useAuth } from '@/features/auth';
 import { AdminConsoleScreen, type AdminTab } from '@/features/admin';
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
@@ -232,22 +232,93 @@ class ScreenErrorBoundary extends Component<
 
 export function StudioApplication() {
   const { route, navigate } = useRoute();
-  const user = useStudioStore((state) => state.user);
-  const session = useStudioStore((state) => state.session);
-  const refreshSession = useStudioStore((state) => state.refreshSession);
+  const { user: authenticatedUser, isLoading } = useAuth();
+  const replaceServerCatalog = useStudioStore((state) => state.replaceServerCatalog);
   const toast = useStudioStore((state) => state.ui.toast);
   const clearToast = useStudioStore((state) => state.clearToast);
 
   useEffect(() => {
-    if (session && session.expiresAt <= Date.now()) refreshSession();
-  }, [refreshSession, session]);
+    useStudioStore.setState({
+      user: authenticatedUser
+        ? {
+            id: authenticatedUser.id,
+            name: authenticatedUser.username,
+            email: authenticatedUser.email,
+            role: 'Owner',
+          }
+        : null,
+    });
+  }, [authenticatedUser]);
 
   useEffect(() => {
-    if (!user && route.name !== 'login') navigate('/login', true);
-    if (user && route.name === 'login') navigate('/dashboard', true);
-  }, [route.name, user]);
+    if (!authenticatedUser) return;
+    let active = true;
+    void Promise.all([
+      responseData(
+        apiClient.get<{
+          data: Array<{ id: string; name: string; ownerId: string; createdAt: string }>;
+        }>('/api/v1/workspaces'),
+      ),
+      responseData(
+        apiClient.get<{
+          data: {
+            items: Array<{
+              id: string;
+              name: string;
+              description?: string;
+              status: string;
+              updatedAt?: string;
+              createdAt: string;
+            }>;
+          };
+        }>('/api/v1/projects'),
+      ),
+      responseData(
+        apiClient.get<{
+          data: Array<{
+            id: ProviderRecord['id'];
+            name: string;
+            category: string;
+            status: ProviderRecord['status'];
+            capabilities: string[];
+          }>;
+        }>('/api/v1/ai/providers'),
+      ),
+    ])
+      .then(([workspaceEnvelope, projectEnvelope, providerEnvelope]) => {
+        if (!active) return;
+        const workspaces = workspaceEnvelope.data ?? [];
+        const defaultWorkspaceId = workspaces[0]?.id ?? '';
+        replaceServerCatalog({
+          workspaces,
+          projects: (projectEnvelope.data?.items ?? []).map((project) => ({
+            id: project.id,
+            workspaceId: defaultWorkspaceId,
+            name: project.name,
+            description: project.description ?? '',
+            aspectRatio: '16:9',
+            frameRate: 30,
+            status: project.status as ProjectStatus,
+            updatedAt: project.updatedAt ?? project.createdAt,
+          })),
+          providers: providerEnvelope.data ?? [],
+        });
+      })
+      .catch((error) => {
+        useStudioStore.getState().notify(getApiError(error).message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [authenticatedUser, replaceServerCatalog]);
 
-  if (!user) return <LoginScreen onAuthenticated={() => navigate('/dashboard', true)} />;
+  useEffect(() => {
+    if (!authenticatedUser && route.name !== 'login') navigate('/login', true);
+    if (authenticatedUser && route.name === 'login') navigate('/dashboard', true);
+  }, [authenticatedUser, route.name]);
+
+  if (isLoading) return null;
+  if (!authenticatedUser) return <LoginPage />;
 
   return (
     <ScreenErrorBoundary onReset={() => navigate('/dashboard')}>
@@ -256,86 +327,6 @@ export function StudioApplication() {
       </AppShell>
       {toast && <ToastMessage message={toast} onClose={clearToast} />}
     </ScreenErrorBoundary>
-  );
-}
-
-function LoginScreen({ onAuthenticated }: { onAuthenticated: () => void }) {
-  const login = useStudioStore((state) => state.login);
-  const [email, setEmail] = useState('owner@northstar.studio');
-  const [password, setPassword] = useState('studio-demo');
-  const [error, setError] = useState('');
-
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    setError('');
-    if (!login(email, password)) {
-      setError('Enter both email and password.');
-      return;
-    }
-    appLogger.info('User session created', { mode: 'mock' });
-    onAuthenticated();
-  };
-
-  return (
-    <main className="grid min-h-[100dvh] bg-background text-foreground lg:grid-cols-[1.1fr_0.9fr]">
-      <section className="hidden border-r border-border bg-[#101416] p-12 lg:flex lg:flex-col lg:justify-between">
-        <Brand />
-        <div className="max-w-xl">
-          <p className="mb-4 text-sm font-medium text-primary">
-            Creative work, one durable system.
-          </p>
-          <h1 className="text-5xl font-semibold leading-[1.05] tracking-[-0.04em] text-zinc-100">
-            Build the story. Shape the cut.
-          </h1>
-          <p className="mt-5 max-w-lg text-base leading-7 text-zinc-400">
-            A stable studio foundation for projects, assets, timelines, jobs and final delivery.
-          </p>
-        </div>
-        <p className="text-xs text-zinc-500">Sprint 2 foundation environment</p>
-      </section>
-      <section className="flex items-center justify-center p-6 sm:p-10">
-        <form onSubmit={submit} className="w-full max-w-sm">
-          <div className="mb-9 lg:hidden">
-            <Brand />
-          </div>
-          <h2 className="text-2xl font-semibold tracking-tight">Sign in to AI Studio</h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            Use the prefilled development account to enter the workspace.
-          </p>
-          <label className="mt-8 block text-sm font-medium">
-            Email
-            <Input
-              className="mt-2"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              autoComplete="email"
-            />
-          </label>
-          <label className="mt-4 block text-sm font-medium">
-            Password
-            <Input
-              className="mt-2"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password"
-            />
-          </label>
-          {error && (
-            <p className="mt-3 rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-          <Button className="mt-6 w-full" type="submit">
-            Sign in
-          </Button>
-          <p className="mt-5 text-center text-xs text-muted-foreground">
-            Local mock authentication. No external API key is used.
-          </p>
-        </form>
-      </section>
-    </main>
   );
 }
 
@@ -400,7 +391,7 @@ function AppShell({
   const workspaces = useStudioStore((state) => state.workspaces);
   const currentWorkspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const selectWorkspace = useStudioStore((state) => state.selectWorkspace);
-  const logout = useStudioStore((state) => state.logout);
+  const { logout } = useAuth();
   const user = useStudioStore((state) => state.user);
   const ui = useStudioStore((state) => state.ui);
   const setUi = useStudioStore((state) => state.setUi);
@@ -478,7 +469,7 @@ function AppShell({
                 ui.sidebarCollapsed && 'justify-center',
               )}
               onClick={() => {
-                logout();
+                void logout();
                 navigate('/login');
               }}
             >
@@ -849,24 +840,34 @@ function ProjectDialog({
   onCreated: (project: ProjectRecord) => void;
 }) {
   const createProject = useStudioStore((state) => state.createProject);
+  const notify = useStudioStore((state) => state.notify);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [aspectRatio, setAspectRatio] = useState<ProjectRecord['aspectRatio']>('16:9');
   const [frameRate, setFrameRate] = useState<ProjectRecord['frameRate']>(24);
+  const [submitting, setSubmitting] = useState(false);
 
-  const submit = (event: FormEvent) => {
+  const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const project = createProject({
-      name: name.trim(),
-      description: description.trim(),
-      aspectRatio,
-      frameRate,
-    });
-    if (project) {
-      onClose();
-      onCreated(project);
-      setName('');
-      setDescription('');
+    if (submitting) return;
+    setSubmitting(true);
+    try {
+      const project = await createProject({
+        name: name.trim(),
+        description: description.trim(),
+        aspectRatio,
+        frameRate,
+      });
+      if (project) {
+        onClose();
+        onCreated(project);
+        setName('');
+        setDescription('');
+      }
+    } catch (error: unknown) {
+      notify(getApiError(error).message);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -877,7 +878,12 @@ function ProjectDialog({
       title="Create project"
       description="Create the project identity and default editorial format."
     >
-      <form onSubmit={submit} className="space-y-4">
+      <form
+        onSubmit={(event) => {
+          void submit(event);
+        }}
+        className="space-y-4"
+      >
         <label className="block text-sm font-medium">
           Project name
           <Input
@@ -928,10 +934,12 @@ function ProjectDialog({
           </label>
         </div>
         <div className="flex justify-end gap-2 pt-3">
-          <Button type="button" variant="outline" onClick={onClose}>
+          <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
             Cancel
           </Button>
-          <Button type="submit">Create project</Button>
+          <Button type="submit" loading={submitting}>
+            Create project
+          </Button>
         </div>
       </form>
     </Dialog>
@@ -1000,12 +1008,14 @@ function WorkspaceCenter() {
       >
         <form
           onSubmit={(event) => {
-            event.preventDefault();
-            if (name.trim()) {
-              createWorkspace(name);
-              setName('');
-              setOpen(false);
-            }
+            void (async () => {
+              event.preventDefault();
+              if (name.trim()) {
+                await createWorkspace(name);
+                setName('');
+                setOpen(false);
+              }
+            })();
           }}
         >
           <label className="block text-sm font-medium">
@@ -1120,7 +1130,7 @@ function ProjectOverview({
             variant="outline"
             className="mt-6 w-full text-destructive hover:text-destructive"
             onClick={() => {
-              archiveProject(project.id);
+              void archiveProject(project.id);
               navigate('/dashboard');
             }}
           >
@@ -1138,7 +1148,7 @@ function ProjectOverview({
         <form
           onSubmit={(event) => {
             event.preventDefault();
-            updateProject(project.id, { name, description });
+            void updateProject(project.id, { name, description });
             setEditOpen(false);
           }}
         >
@@ -1202,7 +1212,7 @@ function buildTimelineFromScenes(scenes: ProductionScene[]) {
       id: `${type}-${scene.id}`,
       sceneId: scene.id,
       type,
-      left: (index * sceneDuration / totalSeconds) * 100,
+      left: ((index * sceneDuration) / totalSeconds) * 100,
       width: (sceneDuration / totalSeconds) * 100,
       startSeconds: index * sceneDuration,
       durationSeconds: sceneDuration,
@@ -1263,34 +1273,32 @@ function EditorShell({
         </button>
         {workspaceMode === 'timeline' && (
           <>
-        {(['select', 'trim', 'split'] as const).map((tool) => (
-          <button
-            key={tool}
-            onClick={() => setEditor({ activeTool: tool })}
-            className={cn(
-              'rounded-md px-3 py-1.5 text-xs capitalize',
-              editor.activeTool === tool
-                ? 'bg-primary text-primary-foreground'
-                : 'text-zinc-400 hover:bg-white/7',
-            )}
-          >
-            {t(`tools.${tool}`)}
-          </button>
-        ))}
-        <div className="mx-2 h-5 w-px bg-white/10" />
-        <button className="editor-icon" aria-label={t('tools.undo')}>
-          <ArrowLeft className="size-4" />
-        </button>
-        <button className="editor-icon" aria-label={t('tools.redo')}>
-          <Redo2 className="size-4" />
-        </button>
+            {(['select', 'trim', 'split'] as const).map((tool) => (
+              <button
+                key={tool}
+                onClick={() => setEditor({ activeTool: tool })}
+                className={cn(
+                  'rounded-md px-3 py-1.5 text-xs capitalize',
+                  editor.activeTool === tool
+                    ? 'bg-primary text-primary-foreground'
+                    : 'text-zinc-400 hover:bg-white/7',
+                )}
+              >
+                {t(`tools.${tool}`)}
+              </button>
+            ))}
+            <div className="mx-2 h-5 w-px bg-white/10" />
+            <button className="editor-icon" aria-label={t('tools.undo')}>
+              <ArrowLeft className="size-4" />
+            </button>
+            <button className="editor-icon" aria-label={t('tools.redo')}>
+              <Redo2 className="size-4" />
+            </button>
           </>
         )}
         <div className="ml-auto flex items-center gap-2 text-xs text-zinc-500">
           <span>
-            {workspaceMode === 'script'
-              ? t('status.scriptAutoSave')
-              : t('status.timelineSaved')}
+            {workspaceMode === 'script' ? t('status.scriptAutoSave') : t('status.timelineSaved')}
           </span>
           {workspaceMode === 'timeline' && <Button size="sm">{t('actions.render')}</Button>}
         </div>
@@ -1299,64 +1307,58 @@ function EditorShell({
         <ManualScriptWorkspace
           projectId={project.id}
           projectName={project.name}
-          onUseForGeneration={(prompt) => {
-            localStorage.setItem('ai-studio-generation-draft', prompt);
-            localStorage.setItem('ai-studio-generation-project', project.id);
-            navigate('/generation');
-          }}
+          onUseForGeneration={() =>
+            navigate(`/generation?projectId=${encodeURIComponent(project.id)}`)
+          }
         />
       ) : (
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(440px,1fr)] 2xl:grid-cols-[260px_minmax(540px,1fr)_280px]">
-        <aside className="hidden min-h-0 border-r border-white/8 bg-[#111517] lg:flex lg:flex-col">
-          <div className="grid grid-cols-3 border-b border-white/8">
-            <button
-              onClick={() => setEditor({ leftPanel: 'workflow' })}
-              className={cn(
-                'px-2 py-3 text-[11px] font-medium',
-                editor.leftPanel === 'workflow'
-                  ? 'border-b-2 border-primary text-zinc-100'
-                  : 'text-zinc-500',
-              )}
-            >
-              {t('panels.workflow')}
-            </button>
-            <button
-              onClick={() => setEditor({ leftPanel: 'assets' })}
-              className={cn(
-                'px-3 py-3 text-xs font-medium',
-                editor.leftPanel === 'assets'
-                  ? 'border-b-2 border-primary text-zinc-100'
-                  : 'text-zinc-500',
-              )}
-            >
-              {t('panels.assets')}
-            </button>
-            <button
-              onClick={() => setEditor({ leftPanel: 'jobs' })}
-              className={cn(
-                'px-3 py-3 text-xs font-medium',
-                editor.leftPanel === 'jobs'
-                  ? 'border-b-2 border-primary text-zinc-100'
-                  : 'text-zinc-500',
-              )}
-            >
-              {t('panels.jobs')}
-            </button>
-          </div>
-          {editor.leftPanel === 'workflow' && <WorkflowPanel project={project} />}
-          {editor.leftPanel === 'assets' && <EditorAssets assets={assets} />}
-          {editor.leftPanel === 'jobs' && <EditorJobs jobs={jobs} />}
-        </aside>
-        <section className="grid min-h-0 grid-rows-[minmax(280px,1fr)_300px]">
-          <PreviewCanvas
-            project={project}
-            projectId={project.id}
-            playhead={editor.playhead}
-          />
-          <TimelineShell projectId={project.id} />
-        </section>
-        <Inspector project={project} />
-      </div>
+        <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[260px_minmax(440px,1fr)] 2xl:grid-cols-[260px_minmax(540px,1fr)_280px]">
+          <aside className="hidden min-h-0 border-r border-white/8 bg-[#111517] lg:flex lg:flex-col">
+            <div className="grid grid-cols-3 border-b border-white/8">
+              <button
+                onClick={() => setEditor({ leftPanel: 'workflow' })}
+                className={cn(
+                  'px-2 py-3 text-[11px] font-medium',
+                  editor.leftPanel === 'workflow'
+                    ? 'border-b-2 border-primary text-zinc-100'
+                    : 'text-zinc-500',
+                )}
+              >
+                {t('panels.workflow')}
+              </button>
+              <button
+                onClick={() => setEditor({ leftPanel: 'assets' })}
+                className={cn(
+                  'px-3 py-3 text-xs font-medium',
+                  editor.leftPanel === 'assets'
+                    ? 'border-b-2 border-primary text-zinc-100'
+                    : 'text-zinc-500',
+                )}
+              >
+                {t('panels.assets')}
+              </button>
+              <button
+                onClick={() => setEditor({ leftPanel: 'jobs' })}
+                className={cn(
+                  'px-3 py-3 text-xs font-medium',
+                  editor.leftPanel === 'jobs'
+                    ? 'border-b-2 border-primary text-zinc-100'
+                    : 'text-zinc-500',
+                )}
+              >
+                {t('panels.jobs')}
+              </button>
+            </div>
+            {editor.leftPanel === 'workflow' && <WorkflowPanel project={project} />}
+            {editor.leftPanel === 'assets' && <EditorAssets assets={assets} />}
+            {editor.leftPanel === 'jobs' && <EditorJobs jobs={jobs} />}
+          </aside>
+          <section className="grid min-h-0 grid-rows-[minmax(280px,1fr)_300px]">
+            <PreviewCanvas project={project} projectId={project.id} playhead={editor.playhead} />
+            <TimelineShell projectId={project.id} />
+          </section>
+          <Inspector project={project} />
+        </div>
       )}
     </div>
   );
@@ -1447,14 +1449,46 @@ function PreviewCanvas({
 }) {
   const { t } = useTranslation('editor');
   const [playing, setPlaying] = useState(false);
+  const setEditor = useStudioStore((state) => state.setEditor);
   const scenes = useProductionFlowStore(
     (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
   const activeScene =
-    scenes.length > 0
-      ? scenes[Math.min(scenes.length - 1, Math.floor(playhead / 5))]
-      : undefined;
+    scenes.length > 0 ? scenes[Math.min(scenes.length - 1, Math.floor(playhead / 5))] : undefined;
   const totalSeconds = Math.max(5, scenes.length * 5);
+
+  useEffect(() => {
+    if (!playing) return;
+
+    let animationFrame = 0;
+    let previousTimestamp = performance.now();
+    const advancePlayback = (timestamp: number) => {
+      const elapsedSeconds = (timestamp - previousTimestamp) / 1000;
+      previousTimestamp = timestamp;
+      const currentPlayhead = useStudioStore.getState().editor.playhead;
+      const nextPlayhead = currentPlayhead + elapsedSeconds;
+
+      if (nextPlayhead >= totalSeconds) {
+        setEditor({ playhead: totalSeconds });
+        setPlaying(false);
+        return;
+      }
+
+      setEditor({ playhead: nextPlayhead });
+      animationFrame = window.requestAnimationFrame(advancePlayback);
+    };
+
+    animationFrame = window.requestAnimationFrame(advancePlayback);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, [playing, setEditor, totalSeconds]);
+
+  const togglePlayback = () => {
+    if (!playing && playhead >= totalSeconds) {
+      setEditor({ playhead: 0 });
+    }
+    setPlaying((current) => !current);
+  };
+
   return (
     <div className="relative flex min-h-0 items-center justify-center bg-[#090b0c] p-5">
       <div
@@ -1484,7 +1518,7 @@ function PreviewCanvas({
         <div className="absolute inset-0 grid place-items-center">
           <button
             className="grid size-12 place-items-center rounded-full bg-zinc-100/90 text-zinc-900 shadow-xl"
-            onClick={() => setPlaying(!playing)}
+            onClick={togglePlayback}
             aria-label={playing ? t('preview.pause') : t('preview.play')}
           >
             {playing ? (
@@ -1585,9 +1619,7 @@ function TimelineShell({ projectId }: { projectId: string }) {
                   )}
                   style={{ left: `${clip.left}%`, width: `${clip.width}%` }}
                 >
-                  <span className="block truncate">
-                    {clip.name || t('timeline.untitledClip')}
-                  </span>
+                  <span className="block truncate">{clip.name || t('timeline.untitledClip')}</span>
                   {track.id === 'script-voice' && (
                     <span className="absolute inset-x-2 bottom-1 h-1 bg-[repeating-linear-gradient(90deg,rgba(110,231,183,.45)_0_2px,transparent_2px_5px)]" />
                   )}

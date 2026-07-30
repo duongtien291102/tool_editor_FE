@@ -20,7 +20,7 @@ function getAutoSaveManager(projectId?: string): TimelineAutoSaveManager {
 interface TimelineState {
   document: TimelineDocument | null;
   runtime: TimelineRuntimeState;
-  
+
   setDocument: (doc: TimelineDocument, projectId?: string) => void;
   updateClip: (trackId: string, updatedClip: Clip, projectId?: string) => void;
   initAutoSave: (projectId: string) => void;
@@ -35,7 +35,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       zoom: 1,
       scrollX: 0,
       scrollY: 0,
-      visibleRange: [{ frame: 0 }, { frame: 1000 }]
+      visibleRange: [{ frame: 0 }, { frame: 1000 }],
     },
     hoveredClipId: null,
     dragState: null,
@@ -45,7 +45,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
     },
     playing: false,
     fps: TIMELINE_CONSTANTS.DEFAULT_FPS,
-    currentFrame: { frame: 0 }
+    currentFrame: { frame: 0 },
   },
 
   initAutoSave: (projectId: string) => {
@@ -65,37 +65,44 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       if (res?.data?.tracks && res.data.tracks.length > 0) {
         const doc: TimelineDocument = {
           id: res.data.id || 'timeline-001',
-          name: res.data.name || 'Main Cut',
-          settings: {
-            fps: { rate: res.data.frameRate || 30 },
-            timecodeMode: 'smpte',
-            resolution: {
-              width: res.data.resolutionWidth || 1920,
-              height: res.data.resolutionHeight || 1080,
-            },
-          },
           tracks: res.data.tracks.map((t) => ({
-            id: t.id,
-            name: t.name,
-            type: t.trackType === 0 ? 'video' : t.trackType === 1 ? 'audio' : 'subtitle',
-            clips: (t.clips || []).map((c) => ({
-              id: c.id,
-              type: t.trackType === 0 ? 'video' : t.trackType === 1 ? 'audio' : 'subtitle',
-              timing: {
-                start: { frame: c.startFrame },
-                duration: { frame: c.endFrame - c.startFrame },
-              },
-              metadata: {
-                id: c.assetId || c.id,
-                name: c.name || 'Clip',
-                type: (c.metadata as any) || 'video',
-              },
-            })),
+            id: t.id || `track-${Math.random()}`,
+            name: t.name || 'Track',
+            type: t.trackType === 0 ? 'video' : t.trackType === 1 ? 'audio' : ('text' as const),
+            clips: (t.clips || []).map((c) => {
+              const startFrame =
+                typeof c.startFrame === 'string' ? parseInt(c.startFrame, 10) : c.startFrame || 0;
+              const endFrame =
+                typeof c.endFrame === 'string' ? parseInt(c.endFrame, 10) : c.endFrame || 0;
+              return {
+                id: c.id || `clip-${Math.random()}`,
+                metadata: {
+                  id: c.assetId || c.id || 'unknown',
+                  name: c.name || 'Clip',
+                  type: t.trackType === 0 ? 'video' : t.trackType === 1 ? 'audio' : 'text',
+                  sourceId: c.assetId || c.id || 'unknown',
+                },
+                timing: {
+                  start: { frame: startFrame },
+                  duration: { frame: endFrame - startFrame },
+                  offset: { frame: 0 },
+                  trimStart: { frame: 0 },
+                  trimEnd: { frame: 0 },
+                },
+                ui: {
+                  selected: false,
+                  color: '#3b82f6',
+                  locked: false,
+                  highlighted: false,
+                },
+              };
+            }),
           })),
         };
         set({ document: doc });
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.warn('[useTimelineStore] Could not load timeline from backend:', error);
     }
   },
@@ -116,7 +123,7 @@ export const useTimelineStore = create<TimelineState>((set, get) => ({
       tracks: state.document.tracks.map((t) =>
         t.id === trackId
           ? { ...t, clips: t.clips.map((c) => (c.id === updatedClip.id ? updatedClip : c)) }
-          : t
+          : t,
       ),
     };
     set({ document: newDoc });

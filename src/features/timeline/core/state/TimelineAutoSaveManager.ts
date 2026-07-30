@@ -75,28 +75,31 @@ export class TimelineAutoSaveManager {
       }
 
       if (timelineId) {
-        const mappedTracks = docToSave.tracks.map((t, tIdx) => ({
-          id: t.id,
-          name: t.name,
-          order: tIdx,
-          trackType: t.type === 'video' ? 0 : t.type === 'audio' ? 1 : 2,
-          locked: false,
-          muted: false,
-          hidden: false,
-          clips: t.clips.map((c) => ({
-            id: c.id,
-            assetId: c.metadata?.sourceId || c.metadata?.id || c.id,
-            startFrame: c.timing.start.frame,
-            endFrame: c.timing.start.frame + c.timing.duration.frame,
-            name: c.metadata?.name || 'Clip',
-            layer: 0,
-            speed: 1.0,
-            trimStart: c.timing.trimStart?.frame || 0,
-            trimEnd: c.timing.trimEnd?.frame || 0,
-            volume: 1.0,
-            metadata: c.metadata?.type || c.type,
-          })),
-        }));
+        const mappedTracks = docToSave.tracks.map((t, tIdx) => {
+          const trackTypeValue = t.type === 'video' ? 0 : t.type === 'audio' ? 1 : 2;
+          return {
+            id: t.id,
+            name: t.name,
+            order: tIdx,
+            trackType: trackTypeValue,
+            locked: false,
+            muted: false,
+            hidden: false,
+            clips: t.clips.map((c) => ({
+              id: c.id,
+              assetId: c.metadata?.sourceId || c.metadata?.id || c.id,
+              startFrame: String(c.timing.start.frame || 0),
+              endFrame: String((c.timing.start.frame || 0) + (c.timing.duration.frame || 0)),
+              name: c.metadata?.name || 'Clip',
+              layer: 0,
+              speed: 1.0,
+              trimStart: String(c.timing.trimStart?.frame || 0),
+              trimEnd: String(c.timing.trimEnd?.frame || 0),
+              volume: 1.0,
+              metadata: c.metadata?.type || 'unknown',
+            })),
+          };
+        });
 
         await TimelineApi.autosave(timelineId, {
           data: {
@@ -106,6 +109,7 @@ export class TimelineAutoSaveManager {
         });
       }
     } catch (error) {
+      // eslint-disable-next-line no-console
       console.error('[TimelineAutoSaveManager] AutoSave failed:', error);
     } finally {
       this.isSaving = false;

@@ -75,7 +75,30 @@ export class TimelineAutoSaveManager {
       }
 
       if (timelineId) {
-        const mappedTracks = docToSave.tracks.map((t, tIdx) => {
+        type TrackDtoForSave = {
+          id: string;
+          name: string;
+          order: number;
+          trackType: 0 | 1 | 2 | 3 | 4;
+          locked: boolean;
+          muted: boolean;
+          hidden: boolean;
+          clips: Array<{
+            id: string;
+            assetId: string;
+            startFrame: string;
+            endFrame: string;
+            name: string;
+            layer: number;
+            speed: number;
+            trimStart: string;
+            trimEnd: string;
+            volume: number;
+            metadata: string;
+          }>;
+        };
+
+        const mappedTracks: TrackDtoForSave[] = docToSave.tracks.map((t, tIdx) => {
           const trackTypeValue = t.type === 'video' ? 0 : t.type === 'audio' ? 1 : 2;
           return {
             id: t.id,

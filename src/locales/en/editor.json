@@ -12,7 +12,12 @@
     "timelineSaved": "Timeline draft saved",
     "scriptAutoSave": "Script autosave"
   },
-  "actions": { "render": "Render" },
+  "actions": { "render": "Export video" },
+  "export": {
+    "queueing": "Queueing...",
+    "queued": "Video export was added to the queue.",
+    "failed": "Could not export video: {{message}}"
+  },
   "panels": { "workflow": "Workflow", "assets": "Assets", "jobs": "Jobs" },
   "preview": {
     "currentFrame": "Current frame",

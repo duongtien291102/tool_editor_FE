@@ -1,12 +1,31 @@
 import { Check, Plus, Search } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { apiClient, responseData } from '@/api/httpClient';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Foundation';
+import { configService } from '@/core/config/ConfigService';
 import { useStudioStore } from '@/state/studioStore';
 import { CompactAssetVersions } from '@/features/asset-pipeline';
 import { PexelsLibrary } from '@/features/pexels';
 import { addMediaAssetToProjectTimeline } from '../utils/editorUtils';
+
+interface PipelineAsset {
+  id: string;
+  currentVersionId?: string | null;
+  versions?: Array<{
+    id: string;
+    metadata?: { properties?: Record<string, string> };
+  }>;
+}
+
+interface PipelineSearchResponse {
+  data?: PipelineAsset[];
+}
+
+function pexelsContentUrl(contentId: string): string {
+  return `${configService.getApiBaseUrl()}/api/pexels/assets/${encodeURIComponent(contentId)}/content`;
+}
 
 export function EditorAssets({
   assets,
@@ -17,8 +36,65 @@ export function EditorAssets({
   const [activeTab, setActiveTab] = useState<'workspace' | 'pexels'>('workspace');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState(assets[0]?.id);
+  const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const visible = assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()));
   const selected = assets.find((asset) => asset.id === selectedId);
+  const missingPexelsUrls = useMemo(
+    () =>
+      assets
+        .filter(
+          (asset) =>
+            asset.source === 'Pexels' && !asset.thumbnailUrl && !asset.contentUrl,
+        )
+        .map((asset) => asset.id)
+        .sort()
+        .join(','),
+    [assets],
+  );
+
+  useEffect(() => {
+    if (!workspaceId || !missingPexelsUrls) return;
+
+    const controller = new AbortController();
+    void responseData(
+      apiClient.get<PipelineSearchResponse>('/api/v1/asset-pipeline/assets/search', {
+        params: { workspaceId },
+        signal: controller.signal,
+      }),
+    )
+      .then((response) => {
+        const pipelineAssets = response.data ?? [];
+        const urlsByAssetId = new Map<string, { contentUrl?: string; thumbnailUrl?: string }>();
+        for (const pipelineAsset of pipelineAssets) {
+          const currentVersion =
+            pipelineAsset.versions?.find(
+              (version) => version.id === pipelineAsset.currentVersionId,
+            ) ?? pipelineAsset.versions?.at(-1);
+          const properties = currentVersion?.metadata?.properties;
+          if (!properties) continue;
+          urlsByAssetId.set(pipelineAsset.id, {
+            contentUrl: properties.contentId
+              ? pexelsContentUrl(properties.contentId)
+              : undefined,
+            thumbnailUrl: properties.thumbnailId
+              ? pexelsContentUrl(properties.thumbnailId)
+              : undefined,
+          });
+        }
+        if (!urlsByAssetId.size) return;
+        useStudioStore.setState((state) => ({
+          assets: state.assets.map((asset) => {
+            const restored = urlsByAssetId.get(asset.id);
+            return restored ? { ...asset, ...restored } : asset;
+          }),
+        }));
+      })
+      .catch(() => {
+        // The cards retain their media-type fallback when cached content is unavailable.
+      });
+
+    return () => controller.abort();
+  }, [missingPexelsUrls, workspaceId]);
 
   const handleUseAsset = (asset: ReturnType<typeof useStudioStore.getState>['assets'][number]) => {
     setSelectedId(asset.id);

@@ -19,4 +19,6 @@ export const ExportApi = {
     responseData(
       apiClient.post<ApiSchema<'ExportJobDtoApiResponse'>>(`/api/v1/export/${id}/retry`),
     ),
+  download: (id: string) =>
+    apiClient.get<Blob>(`/api/v1/export/${id}/download`, { responseType: 'blob' }),
 };

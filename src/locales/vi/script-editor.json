@@ -1,16 +1,16 @@
 {
   "panel": {
-    "selectProject": "Vui lòng chọn một dự án để chỉnh sửa kịch bản.",
+    "selectProject": "Chọn một dự án để chỉnh sửa kịch bản.",
     "noScriptSelected": "Chưa chọn kịch bản nào",
     "createScript": "Tạo kịch bản",
-    "renameScript": "Đổi tên",
+    "renameScript": "Đổi tên kịch bản",
     "deleteScript": "Xóa kịch bản",
     "scriptDescription": "Mô tả kịch bản",
-    "createOrSelectScript": "Tạo mới hoặc chọn một kịch bản để bắt đầu.",
+    "createOrSelectScript": "Tạo hoặc chọn một kịch bản.",
     "promptName": "Tên kịch bản",
-    "confirmDelete": "Bạn có chắc chắn muốn xóa kịch bản này?",
+    "confirmDelete": "Bạn có chắc muốn xóa kịch bản này?",
     "addScene": "Thêm cảnh",
-    "addElement": "Thêm thành phần",
+    "addElement": "Thêm phần tử",
     "deleteScene": "Xóa"
   },
   "toolbar": {
@@ -21,10 +21,10 @@
     "saving": "Đang lưu...",
     "saved": "Đã lưu",
     "dirty": "Đang chỉnh sửa...",
-    "error": "Lỗi lưu file"
+    "error": "Lỗi khi lưu"
   },
   "sceneList": {
-    "title": "Danh sách Cảnh",
+    "title": "Danh sách cảnh",
     "untitledScene": "Cảnh chưa đặt tên",
     "noNotes": "Không có ghi chú"
   },
@@ -32,7 +32,7 @@
     "selectScene": "Vui lòng chọn một cảnh để chỉnh sửa",
     "sceneTitle": "Tiêu đề cảnh",
     "sceneTitlePlaceholder": "Nhập tiêu đề cảnh...",
-    "elements": "Thành phần",
+    "elements": "Phần tử",
     "elementPlaceholder": "Nhập nội dung...",
     "notes": "Ghi chú",
     "notesPlaceholder": "Nhập ghi chú cho cảnh này..."

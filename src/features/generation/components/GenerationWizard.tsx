@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { apiClient, responseData } from '@/api/httpClient';
 import { generationService } from '../services/generationService';
 import type { GenerationSession, GenerationStepArtifact } from '../types';
@@ -13,6 +14,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
   onGenerationComplete,
   onOpenDownloadCenter,
 }) => {
+  const { t } = useTranslation();
   const legacyDraft = useRef(localStorage.getItem('ai-studio-generation-draft'));
   const [sourceProjectId] = useState(() => {
     const queryProjectId = new URLSearchParams(window.location.search).get('projectId');
@@ -115,17 +117,16 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
       {/* Wizard Input Section */}
       <div className="bg-slate-900/80 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-6">
         <div>
-          <h2 className="text-2xl font-extrabold text-white">AI Video Generation Wizard</h2>
+          <h2 className="text-2xl font-extrabold text-white">{t('generation.wizard.title', 'Trình hướng dẫn Tạo Video AI')}</h2>
           <p className="text-slate-400 text-sm mt-1">
-            Transform ideas into a complete video production pipeline with storyboards, prompt
-            packs, timeline drafts, and render jobs.
+            {t('generation.wizard.subtitle', 'Chuyển đổi ý tưởng thành quy trình sản xuất video hoàn chỉnh với bảng điều khiển, gói prompt, nháp dòng thời gian và công việc xuất.')}
           </p>
         </div>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-              Production Prompt
+              {t('generation.wizard.promptLabel', 'Prompt Sản xuất')}
             </label>
             <textarea
               value={prompt}
@@ -133,14 +134,14 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
               disabled={isGenerating}
               rows={3}
               className="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-4 text-sm text-white outline-none"
-              placeholder="Describe what video you want to create..."
+              placeholder={t('generation.wizard.promptPlaceholder', 'Mô tả video bạn muốn tạo...')}
             />
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
-                Workflow Preset
+                {t('generation.wizard.presetLabel', 'Preset Quy trình')}
               </label>
               <div className="flex flex-wrap gap-2">
                 {workflows.map((wf) => (
@@ -169,7 +170,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                   : 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:opacity-95 text-white shadow-indigo-500/25'
               }`}
             >
-              {isGenerating ? 'Generating Video Pipeline...' : '✨ Generate Video Now'}
+              {isGenerating ? t('generation.wizard.generatingBtn', 'Đang tạo Quy trình Video...') : t('generation.wizard.generateBtn', '✨ Tạo Video Ngay')}
             </button>
           </div>
         </div>
@@ -217,7 +218,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           {/* Pipeline Step Executions List */}
           <div className="space-y-3">
             <h3 className="text-sm font-bold text-slate-300 uppercase tracking-wider">
-              Pipeline Execution Log
+              {t('generation.wizard.pipelineLog', 'Nhật ký Thực thi Quy trình')}
             </h3>
             {currentSession.steps.map((step, idx) => (
               <div
@@ -244,10 +245,10 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
 
                 <div className="text-xs text-slate-400 pl-7 flex gap-4">
                   <span>
-                    Input: <strong className="text-slate-300">{step.inputPayload}</strong>
+                    {t('generation.wizard.input', 'Đầu vào')}: <strong className="text-slate-300">{step.inputPayload}</strong>
                   </span>
                   <span>
-                    Output:{' '}
+                    {t('generation.wizard.output', 'Đầu ra')}:{' '}
                     <strong className="text-indigo-300">
                       {step.outputPayload.substring(0, 60)}...
                     </strong>
@@ -260,7 +261,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
           {/* Video Preview & Download Center Trigger when Completed */}
           {currentSession.state === 'Completed' && currentSession.finalVideoUrl && (
             <div className="pt-4 border-t border-slate-800 space-y-4">
-              <h3 className="text-lg font-bold text-white">Generation Result Preview</h3>
+              <h3 className="text-lg font-bold text-white">{t('generation.wizard.resultPreview', 'Xem trước Kết quả Tạo')}</h3>
               <div className="bg-black rounded-xl overflow-hidden border border-slate-800 max-w-3xl mx-auto">
                 <video
                   src={currentSession.finalVideoUrl}
@@ -274,7 +275,7 @@ export const GenerationWizard: React.FC<GenerationWizardProps> = ({
                   onClick={() => onOpenDownloadCenter?.(currentSession.artifacts)}
                   className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl shadow-lg shadow-indigo-600/20 transition-all"
                 >
-                  📦 Download All Project Artifacts
+                  {t('generation.wizard.downloadAll', '📦 Tải xuống Toàn bộ Artifacts Dự án')}
                 </button>
               </div>
             </div>

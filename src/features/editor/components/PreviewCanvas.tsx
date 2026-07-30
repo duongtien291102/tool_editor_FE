@@ -1,10 +1,15 @@
 import { Clapperboard, Pause, Play, RotateCcw } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/core/utils/cn';
 import { type ProjectRecord, useStudioStore } from '@/state/studioStore';
 import { useProductionFlowStore } from '@/features/workflow';
-import { EMPTY_PRODUCTION_SCENES, formatTime, isImageUrl } from '../utils/editorUtils';
+import {
+  EMPTY_PRODUCTION_SCENES,
+  buildTimelineFromScenes,
+  formatTime,
+  isImageUrl,
+} from '../utils/editorUtils';
 
 export function PreviewCanvas({
   project,
@@ -22,9 +27,14 @@ export function PreviewCanvas({
   const scenes = useProductionFlowStore(
     (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
-  const activeScene =
-    scenes.length > 0 ? scenes[Math.min(scenes.length - 1, Math.floor(playhead / 5))] : undefined;
-  const totalSeconds = Math.max(5, scenes.length * 5);
+  const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const activeSceneIndex = timeline.sceneTimings.findIndex(
+    (timing, index) =>
+      playhead >= timing.startSeconds &&
+      (playhead < timing.endSeconds || index === timeline.sceneTimings.length - 1),
+  );
+  const activeScene = activeSceneIndex >= 0 ? scenes[activeSceneIndex] : undefined;
+  const totalSeconds = timeline.totalSeconds;
 
   useEffect(() => {
     if (!playing) return;
@@ -74,8 +84,8 @@ export function PreviewCanvas({
         {/* Background image or video backdrop */}
         {isImageUrl(activeScene?.visual) ? (
           <img
-            src={activeScene.visual}
-            alt={activeScene.title}
+            src={activeScene?.visual}
+            alt={activeScene?.title ?? t('timeline.emptyTitle')}
             className="absolute inset-0 size-full object-cover"
           />
         ) : (

@@ -10,6 +10,8 @@ interface ManualScene {
   narration: string;
   visual: string;
   source?: 'ai' | 'manual';
+  durationSeconds?: number;
+  voiceDurationSeconds?: number;
 }
 
 interface ManualScriptDraft {

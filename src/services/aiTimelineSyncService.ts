@@ -9,6 +9,7 @@ import {
 } from '@/features/timeline';
 import { searchPexels, importPexelsAsset } from '@/lib/pexels';
 import { useStudioStore } from '@/state/studioStore';
+import { TimelineApi } from '@/api/TimelineApi';
 
 const DEFAULT_FPS = 30;
 
@@ -280,6 +281,9 @@ export async function syncAiScriptToTimeline(
   const currentProjectId = studioState.currentProjectId || 'project-atlas';
   const currentWorkspaceId = studioState.currentWorkspaceId || 'ws-studio';
 
+  // Persist the 6 timeline layers and clips to Backend MongoDB database
+  void persistTimelineDocumentToBackend(currentProjectId, timelineDocument);
+
   const pexelsSearchPromises = scenes.map(async (scene: AIScriptScene, idx: number) => {
     const scenePlan = directorPlan.scenes[idx];
     if (scenePlan && scenePlan.mediaStrategy.type === 'image_generation') {
@@ -333,4 +337,78 @@ export async function syncAiScriptToTimeline(
     .notify(
       `AI Director Plan v${directorPlan.version} (${directorPlan.stylePreset}) synced to 6 Timeline layers!`,
     );
+}
+
+export async function persistTimelineDocumentToBackend(
+  projectId: string,
+  timelineDoc: TimelineDocument,
+): Promise<void> {
+  try {
+    let timelineId = '';
+    try {
+      const res = await TimelineApi.getByProject(projectId);
+      if (res?.data?.id) {
+        timelineId = res.data.id;
+      }
+    } catch {
+      // Ignored if not found
+    }
+
+    if (!timelineId) {
+      try {
+        const createRes = await TimelineApi.create({
+          projectId,
+          name: 'Main Cut',
+          frameRate: 30,
+          resolutionWidth: 1920,
+          resolutionHeight: 1080,
+        });
+        if (createRes?.data?.id) {
+          timelineId = createRes.data.id;
+        }
+      } catch {
+        // Ignored
+      }
+    }
+
+    if (!timelineId) return;
+
+    const mappedTracks = timelineDoc.tracks.map((t, tIdx) => ({
+      id: t.id,
+      name: t.name,
+      order: tIdx,
+      trackType: t.type === 'video' ? 0 : t.type === 'audio' ? 1 : 2,
+      locked: false,
+      muted: false,
+      hidden: false,
+      clips: t.clips.map((c) => ({
+        id: c.id,
+        assetId: c.metadata.sourceId || c.metadata.id || c.id,
+        startFrame: c.timing.start.frame,
+        endFrame: c.timing.start.frame + c.timing.duration.frame,
+        name: c.metadata.name || 'Clip',
+        layer: 0,
+        speed: 1.0,
+        trimStart: c.timing.trimStart?.frame || 0,
+        trimEnd: c.timing.trimEnd?.frame || 0,
+        volume: 1.0,
+        metadata: c.metadata.type,
+      })),
+    }));
+
+    await TimelineApi.autosave(timelineId, {
+      data: {
+        id: timelineId,
+        projectId,
+        name: 'Main Cut',
+        version: 1,
+        frameRate: 30,
+        resolutionWidth: 1920,
+        resolutionHeight: 1080,
+        tracks: mappedTracks as any,
+      },
+    });
+  } catch (err) {
+    console.warn('Failed to persist timeline to backend:', err);
+  }
 }

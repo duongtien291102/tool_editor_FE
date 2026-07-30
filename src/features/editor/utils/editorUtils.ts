@@ -14,6 +14,27 @@ export interface ProjectTimelineClip {
 }
 
 export const EMPTY_PRODUCTION_SCENES: ProductionScene[] = [];
+export const DEFAULT_SCENE_DURATION_SECONDS = 5;
+export const MIN_SCENE_DURATION_SECONDS = 1;
+export const VOICE_TAIL_PADDING_SECONDS = 0.35;
+
+export function roundSceneDuration(seconds: number): number {
+  return Math.round(seconds * 10) / 10;
+}
+
+export function getMinimumSceneDuration(scene: ProductionScene): number {
+  return roundSceneDuration(
+    Math.max(
+      MIN_SCENE_DURATION_SECONDS,
+      (scene.voiceDurationSeconds ?? 0) + VOICE_TAIL_PADDING_SECONDS,
+    ),
+  );
+}
+
+export function getSceneDuration(scene: ProductionScene): number {
+  const requestedDuration = scene.durationSeconds ?? DEFAULT_SCENE_DURATION_SECONDS;
+  return roundSceneDuration(Math.max(requestedDuration, getMinimumSceneDuration(scene)));
+}
 
 export function formatTime(seconds: number): string {
   const whole = Math.floor(seconds);
@@ -44,8 +65,27 @@ export function isImageUrl(url?: string): boolean {
     url.startsWith('https://') ||
     url.startsWith('data:image/') ||
     url.startsWith('blob:') ||
+    url.startsWith('/api/') ||
     url.startsWith('/media/') ||
     /\.(png|jpg|jpeg|webp|gif|svg)(\?.*)?$/i.test(url)
+  );
+}
+
+export function findTargetSceneIndex(
+  scenes: ProductionScene[],
+  selectedClipId: string | null,
+  playhead: number,
+): number {
+  const selectedIndex = scenes.findIndex(
+    (scene) => scene.id === selectedClipId || `visual-${scene.id}` === selectedClipId,
+  );
+  if (selectedIndex >= 0) return selectedIndex;
+
+  const timeline = buildTimelineFromScenes(scenes);
+  return scenes.findIndex(
+    (_, index) =>
+      playhead >= timeline.sceneTimings[index].startSeconds &&
+      playhead < timeline.sceneTimings[index].endSeconds,
   );
 }
 
@@ -61,13 +101,7 @@ export function addMediaAssetToProjectTimeline(
   const scenes = currentProjectFlow?.scenes ?? [];
   const selectedClipId = useStudioStore.getState().editor.selectedClipId;
   const playhead = useStudioStore.getState().editor.playhead;
-
-  const targetIndex = scenes.findIndex(
-    (s, idx) =>
-      s.id === selectedClipId ||
-      `visual-${s.id}` === selectedClipId ||
-      Math.floor(playhead / 5) === idx,
-  );
+  const targetIndex = findTargetSceneIndex(scenes, selectedClipId, playhead);
 
   const updatedScenes = [...scenes];
   let targetSceneId = '';
@@ -94,6 +128,8 @@ export function addMediaAssetToProjectTimeline(
   }
 
   flowStore.syncScript(projectId, currentProjectFlow?.idea ?? '', updatedScenes);
+  const updatedTimeline = buildTimelineFromScenes(updatedScenes);
+  const assignedSceneIndex = Math.max(0, updatedScenes.findIndex((scene) => scene.id === targetSceneId));
 
   const clipId = `clip-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
   useStudioStore.setState((state) => ({
@@ -109,7 +145,11 @@ export function addMediaAssetToProjectTimeline(
         thumbnailUrl: thumbnailUrl || '',
       },
     ],
-    editor: { ...state.editor, selectedClipId: `visual-${targetSceneId}` },
+    editor: {
+      ...state.editor,
+      selectedClipId: `visual-${targetSceneId}`,
+      playhead: updatedTimeline.sceneTimings[assignedSceneIndex]?.startSeconds ?? state.editor.playhead,
+    },
     ui: {
       ...state.ui,
       toast: isReplace
@@ -120,22 +160,37 @@ export function addMediaAssetToProjectTimeline(
 }
 
 export function buildTimelineFromScenes(scenes: ProductionScene[]) {
-  const sceneDuration = 5;
-  const totalSeconds = Math.max(sceneDuration, scenes.length * sceneDuration);
-  const clipsFor = (type: ProjectTimelineClip['type']): ProjectTimelineClip[] =>
-    scenes.map((scene, index) => ({
-      id: `${type}-${scene.id}`,
+  let cursorSeconds = 0;
+  const sceneTimings = scenes.map((scene) => {
+    const durationSeconds = getSceneDuration(scene);
+    const timing = {
       sceneId: scene.id,
-      type,
-      left: ((index * sceneDuration) / totalSeconds) * 100,
-      width: (sceneDuration / totalSeconds) * 100,
-      startSeconds: index * sceneDuration,
-      durationSeconds: sceneDuration,
-      name: type === 'visual' ? scene.title : scene.narration,
-      content: type === 'visual' ? scene.visual : scene.narration,
-    }));
+      startSeconds: cursorSeconds,
+      durationSeconds,
+      endSeconds: cursorSeconds + durationSeconds,
+    };
+    cursorSeconds = timing.endSeconds;
+    return timing;
+  });
+  const totalSeconds = Math.max(DEFAULT_SCENE_DURATION_SECONDS, cursorSeconds);
+  const clipsFor = (type: ProjectTimelineClip['type']): ProjectTimelineClip[] =>
+    scenes.map((scene, index) => {
+      const timing = sceneTimings[index];
+      return {
+        id: `${type}-${scene.id}`,
+        sceneId: scene.id,
+        type,
+        left: (timing.startSeconds / totalSeconds) * 100,
+        width: (timing.durationSeconds / totalSeconds) * 100,
+        startSeconds: timing.startSeconds,
+        durationSeconds: timing.durationSeconds,
+        name: type === 'visual' ? scene.title : scene.narration,
+        content: type === 'visual' ? scene.visual : scene.narration,
+      };
+    });
   return {
     totalSeconds,
+    sceneTimings,
     rows: [
       { id: 'script-visuals', label: 'V1', name: 'sceneVisuals', clips: clipsFor('visual') },
       { id: 'script-voice', label: 'A1', name: 'sceneNarration', clips: clipsFor('voice') },

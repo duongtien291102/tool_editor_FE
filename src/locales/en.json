@@ -84,7 +84,7 @@
     "projectStructureDescription": "The production objects prepared for editing.",
     "modules": {
       "script": "Script",
-      "scriptMeta": "Draft / Autosave",
+      "scriptMeta": "Draft / Auto-saved",
       "storyboard": "Storyboard",
       "storyboardMeta": "1 board / 6 scenes",
       "timeline": "Timeline",
@@ -100,6 +100,52 @@
     "name": "Name",
     "description": "Description",
     "saveProject": "Save project"
+  },
+  "createProjectDialog": {
+    "title": "Create project",
+    "description": "Create the project identity and default editorial format.",
+    "name": "Project name",
+    "namePlaceholder": "Campaign or production name",
+    "descriptionLabel": "Description",
+    "descPlaceholder": "Short production brief",
+    "aspectRatio": "Aspect ratio",
+    "frameRate": "Frame rate",
+    "projectCreatedToast": "Project created"
+  },
+  "workspaces": {
+    "title": "Workspaces",
+    "description": "Tenant boundaries for projects, members, assets and usage.",
+    "newWorkspace": "New workspace",
+    "activeProjects": "{{count}} active projects / Owner workspace",
+    "currentWorkspace": "Current workspace",
+    "switchWorkspace": "Switch workspace",
+    "createTitle": "Create workspace",
+    "createDesc": "Create a separate boundary for projects and assets.",
+    "nameLabel": "Workspace name",
+    "createBtn": "Create workspace"
+  },
+  "assetLibrary": {
+    "title": "Asset Library",
+    "description": "Workspace media catalog with immutable asset references.",
+    "uploadAsset": "Upload asset",
+    "tabs": {
+      "uploads": "Uploads",
+      "images": "Images",
+      "videos": "Videos",
+      "pexels": "Pexels"
+    },
+    "folders": "Folders",
+    "allAssets": "All assets",
+    "searchPlaceholder": "Search assets",
+    "allKinds": "All",
+    "tagPlaceholder": "Tag",
+    "providerPlaceholder": "Provider",
+    "workflowPlaceholder": "Workflow",
+    "versionPlaceholder": "Version",
+    "noAssetsTitle": "No matching assets",
+    "noAssetsDesc": "Change the search or filter to see other media.",
+    "selectAssetTitle": "Select an asset",
+    "selectAssetDesc": "Asset metadata appears here."
   },
   "commercial": {
     "title": "Commercial & SaaS Hub",

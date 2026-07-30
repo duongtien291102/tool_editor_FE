@@ -1,88 +1,84 @@
 {
-  "navigation": { "editor": "Trình biên tập" },
-  "modes": {
-    "timeline": "Dựng phim",
-    "script": "Kịch bản"
-  },
+  "navigation": { "editor": "Trình chỉnh sửa" },
+  "modes": { "timeline": "Chỉnh sửa", "script": "Kịch bản" },
   "tools": {
-    "select": "Chọn",
-    "trim": "Cắt mép",
-    "split": "Chia đoạn",
+    "select": "Lựa chọn",
+    "trim": "Cắt",
+    "split": "Chia",
     "undo": "Hoàn tác",
     "redo": "Làm lại"
   },
   "status": {
-    "timelineSaved": "Bản nháp timeline đã lưu",
-    "scriptAutoSave": "Kịch bản tự động lưu"
+    "timelineSaved": "Nháp dòng thời gian đã lưu",
+    "scriptAutoSave": "Tự động lưu kịch bản"
   },
-  "actions": {
-    "render": "Xuất video"
+  "actions": { "render": "Xuất video" },
+  "export": {
+    "queueing": "Đang xếp hàng...",
+    "queued": "Đã thêm video vào hàng đợi xuất.",
+    "failed": "Không thể xuất video: {{message}}"
   },
-  "panels": {
-    "workflow": "Quy trình",
-    "assets": "Tài nguyên",
-    "jobs": "Tác vụ"
-  },
+  "panels": { "workflow": "Quy trình", "assets": "Tài nguyên", "jobs": "Công việc" },
   "preview": {
     "currentFrame": "Khung hình hiện tại",
     "play": "Phát xem trước",
     "pause": "Tạm dừng xem trước"
   },
   "timeline": {
-    "title": "Timeline chính",
+    "title": "Dòng thời gian chính",
     "zoomOut": "Thu nhỏ",
     "zoomIn": "Phóng to",
-    "playhead": "Đầu phát timeline",
-    "emptyTitle": "Chưa có cảnh thật",
-    "emptyDescription": "Hãy tạo hoặc chọn một kịch bản để dựng timeline.",
+    "playhead": "Con trỏ dòng thời gian",
+    "emptyTitle": "Chưa có cảnh nào",
+    "emptyDescription": "Tạo hoặc chọn một kịch bản để xây dựng dòng thời gian này.",
     "untitledClip": "Cảnh chưa đặt tên",
     "tracks": {
-      "sceneVisuals": "Hình ảnh theo cảnh",
-      "sceneNarration": "Lời thoại theo cảnh"
+      "sceneVisuals": "Hình ảnh cảnh",
+      "sceneNarration": "Lời tường thuật cảnh"
     }
   },
   "inspector": {
-    "title": "Thuộc tính",
-    "selection": "Đối tượng đang chọn",
-    "noSelection": "Chưa chọn clip",
+    "title": "Trình kiểm tra",
+    "selection": "Lựa chọn",
+    "noSelection": "Chưa chọn clip nào",
     "clipType": "Loại clip",
     "clipTypes": {
       "visual": "Hình ảnh cảnh",
-      "voice": "Lời thoại"
+      "voice": "Lời tường thuật"
     },
     "position": "Vị trí",
     "duration": "Thời lượng",
     "content": "Nội dung đã lưu",
-    "noContent": "Chưa có nội dung",
+    "noContent": "Không có nội dung",
     "projectFormat": "Định dạng dự án",
     "transform": "Biến đổi",
     "audio": "Âm thanh"
   },
   "workflow": {
     "title": "Quy trình video",
-    "description": "Timeline được tạo từ dữ liệu quy trình đã kiểm tra.",
-    "liveDescription": "Trạng thái được đồng bộ từ kịch bản, Gemini và phiên tạo video.",
-    "selectedOutput": "Kết quả đang chọn",
+    "description": "Dòng thời gian được tạo từ dữ liệu quy trình xác thực.",
+    "liveDescription": "Trạng thái được đồng bộ từ kịch bản, Gemini và phiên tạo.",
+    "selectedOutput": "Đầu ra đã chọn",
     "states": {
       "idea": "Ý tưởng",
-      "storyboard": "Bảng phân cảnh",
+      "storyboard": "Bảng điều khiển",
       "scene": "Cảnh",
-      "prompt-pack": "Bộ prompt",
-      "timeline-draft": "Bản nháp timeline",
-      "ready-for-render": "Sẵn sàng xuất video"
+      "prompt-pack": "Gói Prompt",
+      "timeline-draft": "Nháp Dòng Thời Gian",
+      "ready-for-render": "Sẵn Sàng Xuất Video"
     },
     "statuses": {
-      "pending": "Đang chờ",
+      "pending": "Chờ xử lý",
       "current": "Hiện tại",
-      "completed": "Hoàn thành",
+      "completed": "Đã hoàn thành",
       "blocked": "Bị chặn"
     },
     "fields": {
       "title": "Tiêu đề",
       "summary": "Tóm tắt",
-      "audience": "Khán giả",
+      "audience": "Đối tượng",
       "structure": "Cấu trúc",
-      "scenes": "Số cảnh",
+      "scenes": "Cảnh",
       "duration": "Thời lượng",
       "status": "Trạng thái",
       "checks": "Kiểm tra",
@@ -90,19 +86,19 @@
       "generationSession": "Phiên tạo"
     },
     "values": {
-      "summary": "Một câu chuyện hình ảnh súc tích từ một định hướng sáng tạo.",
-      "audience": "Khách hàng yêu thích thiết kế sản phẩm",
-      "structure": "Mở đầu · Chi tiết · Chuyển động · Khung kết"
+      "summary": "Một câu chuyện hình ảnh ngắn gọn được xây dựng từ một hướng sáng tạo duy nhất.",
+      "audience": "Khách hàng sản phẩm có ý thức về thiết kế",
+      "structure": "Mở đầu · Chi tiết · Chuyển động · Khung cuối"
     },
     "checks": {
-      "complete": "Đủ tên cảnh, lời thoại và mô tả hình ảnh",
-      "incomplete": "Còn cảnh chưa hoàn chỉnh",
+      "complete": "Tiêu đề, lời tường thuật và hình ảnh cảnh đã hoàn thành",
+      "incomplete": "Một số cảnh chưa hoàn thành",
       "ready": "Video đã tạo và sẵn sàng",
       "notReady": "Chưa có video hoàn chỉnh"
     },
     "sources": {
       "script": "Kịch bản đã chọn",
-      "notPrepared": "Chưa chuyển sang tạo video",
+      "notPrepared": "Chưa gửi để tạo",
       "notCreated": "Chưa tạo phiên"
     }
   },
@@ -128,23 +124,23 @@
       "tags": "Thẻ"
     },
     "metadata": {
-      "mimeType": "Kiểu MIME",
-      "size": "Dung lượng",
+      "mimeType": "Loại MIME",
+      "size": "Kích thước",
       "resolution": "Độ phân giải",
       "duration": "Thời lượng",
-      "checksum": "Mã kiểm tra"
+      "checksum": "Tổng kiểm tra"
     },
     "preview": {
       "status": "Trạng thái",
       "currentVersion": "Phiên bản hiện tại",
       "reference": "Tham chiếu",
-      "storage": "Kho lưu trữ"
+      "storage": "Lưu trữ"
     },
     "previewStatuses": {
       "ready": "Sẵn sàng"
     },
     "storage": {
-      "mock-repository": "Kho mô phỏng"
+      "mock-repository": "Kho lưu trữ mô phỏng"
     },
     "types": {
       "image": "Hình ảnh",
@@ -155,20 +151,20 @@
       "json": "JSON",
       "srt": "SRT",
       "markdown": "Markdown",
-      "thumbnail": "Ảnh thu nhỏ",
-      "voice": "Giọng đọc",
-      "reference-image": "Ảnh tham chiếu",
-      "generated-asset": "Tài nguyên đã tạo"
+      "thumbnail": "Ảnh nhỏ",
+      "voice": "Giọng nói",
+      "reference-image": "Hình ảnh Tham chiếu",
+      "generated-asset": "Tài sản Được tạo"
     },
     "sources": {
       "import": "Nhập",
-      "metadata-review": "Duyệt siêu dữ liệu",
-      "quality-review": "Duyệt chất lượng",
+      "metadata-review": "Xem xét siêu dữ liệu",
+      "quality-review": "Xem xét chất lượng",
       "restore": "Khôi phục từ {{id}}"
     },
     "workflow": {
-      "quality-review": "Duyệt chất lượng"
+      "quality-review": "Xem xét chất lượng"
     },
-    "emptyDependencies": "Không có liên kết phụ thuộc."
+    "emptyDependencies": "Không có cạnh phụ thuộc."
   }
 }

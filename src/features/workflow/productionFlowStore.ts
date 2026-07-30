@@ -20,6 +20,8 @@ export interface ProductionScene {
   narration: string;
   visual: string;
   source?: 'ai' | 'manual';
+  durationSeconds?: number;
+  voiceDurationSeconds?: number;
 }
 
 interface ScriptWorkspaceEnvelope {
@@ -32,6 +34,8 @@ interface ScriptWorkspaceEnvelope {
       narration?: string;
       visual?: string;
       source?: 'ai' | 'manual';
+      durationSeconds?: number;
+      voiceDurationSeconds?: number;
     }>;
   };
 }
@@ -40,6 +44,12 @@ interface ProductionFlowState {
   projects: Record<string, ProjectProductionFlow>;
   hydrateProject: (projectId: string) => Promise<void>;
   syncScript: (projectId: string, body: string, scenes: ProductionScene[]) => void;
+  updateSceneTiming: (
+    projectId: string,
+    sceneId: string,
+    timing: Pick<ProductionScene, 'durationSeconds' | 'voiceDurationSeconds'>,
+  ) => void;
+  persistSceneTiming: (projectId: string, sceneId: string) => Promise<void>;
   markGenerationStarted: (projectId: string, sessionId?: string) => void;
   syncGeneration: (
     projectId: string,
@@ -85,6 +95,8 @@ export const useProductionFlowStore = create<ProductionFlowState>()((set, get) =
           narration: scene.narration ?? '',
           visual: scene.visual ?? '',
           source: scene.source ?? 'ai',
+          durationSeconds: scene.durationSeconds,
+          voiceDurationSeconds: scene.voiceDurationSeconds,
         })),
       );
     } catch (error) {
@@ -114,6 +126,38 @@ export const useProductionFlowStore = create<ProductionFlowState>()((set, get) =
         },
       };
     }),
+
+  updateSceneTiming: (projectId, sceneId, timing) =>
+    set((state) => {
+      const previous = state.projects[projectId] ?? emptyFlow();
+      return {
+        projects: {
+          ...state.projects,
+          [projectId]: {
+            ...previous,
+            scenes: previous.scenes.map((scene) =>
+              scene.id === sceneId ? { ...scene, ...timing } : scene,
+            ),
+            updatedAt: new Date().toISOString(),
+          },
+        },
+      };
+    }),
+
+  persistSceneTiming: async (projectId, sceneId) => {
+    const scene = get().projects[projectId]?.scenes.find((item) => item.id === sceneId);
+    if (!scene) return;
+
+    await responseData(
+      apiClient.patch(
+        `/api/v1/generation/script-workspaces/${encodeURIComponent(projectId)}/scenes/${encodeURIComponent(sceneId)}/timing`,
+        {
+          durationSeconds: scene.durationSeconds ?? 5,
+          voiceDurationSeconds: scene.voiceDurationSeconds ?? null,
+        },
+      ),
+    );
+  },
 
   markGenerationStarted: (projectId, sessionId) =>
     set((state) => {

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { generationService } from '../services/generationService';
 import type { GenerationSession, GenerationStepArtifact } from '../types';
 import { GenerationWizard } from './GenerationWizard';
@@ -14,6 +15,7 @@ interface GenerationScreenProps {
 }
 
 export const GenerationScreen: React.FC<GenerationScreenProps> = ({ defaultTab = 'wizard' }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<GenerationTab>(defaultTab);
   const [sessions, setSessions] = useState<GenerationSession[]>([]);
 
@@ -38,8 +40,8 @@ export const GenerationScreen: React.FC<GenerationScreenProps> = ({ defaultTab =
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Video Generation Experience</h1>
-          <p className="text-slate-400 text-sm mt-1">End-to-end video pipeline wizard, artifact outputs, and session management</p>
+          <h1 className="text-3xl font-extrabold text-white">{t('generation.title', 'Trải nghiệm Tạo Video')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('generation.subtitle', 'Quy trình video tự động từ đầu đến cuối, kết quả artifact và quản lý phiên')}</p>
         </div>
 
         <div className="flex gap-2">
@@ -51,7 +53,7 @@ export const GenerationScreen: React.FC<GenerationScreenProps> = ({ defaultTab =
                 : 'bg-slate-900 text-slate-400 border border-slate-800'
             }`}
           >
-            ✨ New Generation Wizard
+            {t('generation.tabs.wizard', '✨ Trình hướng dẫn Tạo mới')}
           </button>
           <button
             onClick={() => setActiveTab('history')}
@@ -61,7 +63,7 @@ export const GenerationScreen: React.FC<GenerationScreenProps> = ({ defaultTab =
                 : 'bg-slate-900 text-slate-400 border border-slate-800'
             }`}
           >
-            📜 Generation History ({sessions.length})
+            {t('generation.tabs.history', '📜 Lịch sử Tạo')} ({sessions.length})
           </button>
         </div>
       </div>

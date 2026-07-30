@@ -28,9 +28,10 @@ export function TimelineShell({ projectId }: { projectId: string }) {
     (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
   const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const rulerStep = Math.max(5, Math.ceil(timeline.totalSeconds / 50) * 5);
   const rulerMarks = Array.from(
-    { length: Math.min(11, Math.max(2, Math.ceil(timeline.totalSeconds / 5) + 1)) },
-    (_, index) => Math.min(index * 5, timeline.totalSeconds),
+    { length: Math.max(2, Math.ceil(timeline.totalSeconds / rulerStep) + 1) },
+    (_, index) => Math.min(index * rulerStep, timeline.totalSeconds),
   );
   const timelineRows = [...timeline.rows, ...customVideoTracks, ...customAudioTracks];
 
@@ -69,8 +70,8 @@ export function TimelineShell({ projectId }: { projectId: string }) {
       name?: string;
       thumbnailUrl?: string;
       contentUrl?: string;
-      pexelsId?: string;
-      kind?: string;
+      pexelsId?: string | number;
+      kind?: 'photo' | 'video';
     }
     try {
       const jsonStr = event.dataTransfer.getData('application/json');
@@ -86,12 +87,13 @@ export function TimelineShell({ projectId }: { projectId: string }) {
         );
       } else if (payload.pexelsId) {
         const workspaceId = useStudioStore.getState().currentWorkspaceId;
+        const pexelsId = Number(payload.pexelsId);
         if (workspaceId && projectId) {
           void importPexelsAsset({
             workspaceId,
             projectId,
             mediaType: payload.kind ?? 'photo',
-            pexelsId: payload.pexelsId,
+            pexelsId,
           }).then((imported) => {
             useStudioStore.getState().addImportedStockAsset({
               assetId: imported.assetId,
@@ -101,7 +103,7 @@ export function TimelineShell({ projectId }: { projectId: string }) {
               contentUrl: imported.contentUrl,
               thumbnailUrl: imported.thumbnailUrl,
               sizeBytes: imported.sizeBytes,
-              durationSeconds: imported.durationSeconds,
+              durationSeconds: imported.durationSeconds ?? 0,
               photographer: imported.photographer,
               sourceUrl: imported.pexelsUrl,
             });

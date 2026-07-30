@@ -23,7 +23,6 @@ import {
   List,
   LogOut,
   Menu as MenuIcon,
-  MoreHorizontal,
   Music2,
   PanelLeftClose,
   PanelRight,
@@ -38,6 +37,7 @@ import {
   ShieldCheck,
   Upload,
   Video,
+  Volume2,
   WandSparkles,
   X,
   ZoomIn,
@@ -48,8 +48,10 @@ import {
   type ErrorInfo,
   type FormEvent,
   type ReactNode,
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { Button } from '@/components/ui/Button';
@@ -59,6 +61,7 @@ import {
   Dialog,
   EmptyState,
   Input,
+  LoadingState,
   Progress,
   ToastMessage,
 } from '@/components/ui/Foundation';
@@ -71,14 +74,14 @@ import {
   useStudioStore,
 } from '@/state/studioStore';
 import { apiClient, getApiError, responseData } from '@/api/httpClient';
+import { ExportApi } from '@/api/ExportApi';
+import type { ApiSchema } from '@/api/types';
 import { cn } from '@/core/utils/cn';
 import { appLogger } from '@/core/logger';
 import { WorkflowPanel, useProductionFlowStore, type ProductionScene } from '@/features/workflow';
 import {
   AssetVersionPanel,
-  CompactAssetVersions,
   assetPipelineTypes,
-  getAssetPipelineDetail,
   matchesAssetFilters,
   type AssetPipelineType,
 } from '@/features/asset-pipeline';
@@ -91,6 +94,17 @@ import { useTranslation } from 'react-i18next';
 import { LanguageSwitcher } from '@/components/ui/LanguageSwitcher';
 import { PexelsLibrary } from '@/features/pexels';
 import { ManualScriptWorkspace } from '@/features/script-editor';
+import {
+  DEFAULT_SCENE_DURATION_SECONDS,
+  EditorAssets as ProjectEditorAssets,
+  getMinimumSceneDuration,
+  getSceneDuration,
+  isImageUrl,
+  prepareProjectVoicePlayback,
+  queueProjectVideoExport,
+  roundSceneDuration,
+} from '@/features/editor';
+import { useTimelineStore } from '@/features/timeline';
 
 type Route =
   | { name: 'login' }
@@ -565,12 +579,26 @@ function Breadcrumb({
   currentWorkspace: string;
   navigate: (path: string) => void;
 }) {
-  const { t } = useTranslation('editor');
+  const { t: tEditor } = useTranslation('editor');
+  const { t } = useTranslation();
+
   const project = useStudioStore((state) =>
     route.name === 'project' || route.name === 'editor'
       ? state.projects.find((item) => item.id === route.projectId)
       : undefined,
   );
+
+  const titles: Partial<Record<Route['name'], string>> = {
+    dashboard: t('nav.dashboard', 'Production Overview'),
+    workspaces: t('nav.workspaces', 'Workspaces'),
+    assets: t('nav.assets', 'Asset Catalog'),
+    jobs: t('nav.jobs', 'Job Center'),
+    renders: t('nav.renders', 'Render Center'),
+    providers: t('nav.providers', 'AI Providers Integration'),
+    settings: t('nav.settings', 'Settings'),
+  };
+  const routeTitleText = titles[route.name] ?? 'AI Studio';
+
   return (
     <div className="min-w-0 text-sm text-muted-foreground">
       <button
@@ -591,33 +619,22 @@ function Breadcrumb({
           {route.name === 'editor' && (
             <>
               <span className="px-2">/</span>
-              <span>{t('navigation.editor')}</span>
+              <span>{tEditor('navigation.editor')}</span>
             </>
           )}
         </>
       )}
-      {!project && (
-        <span className="font-medium text-foreground sm:hidden">{routeTitle(route)}</span>
-      )}
+      {!project && <span className="font-medium text-foreground sm:hidden">{routeTitleText}</span>}
     </div>
   );
 }
 
-function routeTitle(route: Route) {
-  const titles: Partial<Record<Route['name'], string>> = {
-    dashboard: 'Dashboard',
-    workspaces: 'Workspaces',
-    assets: 'Assets',
-    jobs: 'Job Center',
-    renders: 'Render Center',
-    providers: 'Providers',
-    settings: 'Settings',
-  };
-  return titles[route.name] ?? 'AI Studio';
-}
-
 function RouteScreen({ route, navigate }: { route: Route; navigate: (path: string) => void }) {
+  // Hooks MUST be called at the top level, before any conditional logic
+  const { t } = useTranslation();
   const projects = useStudioStore((state) => state.projects);
+
+  // All conditionals after hooks
   if (route.name === 'dashboard') return <Dashboard navigate={navigate} />;
   if (route.name === 'workspaces') return <WorkspaceCenter />;
   if (route.name === 'assets') return <AssetLibrary />;
@@ -632,8 +649,8 @@ function RouteScreen({ route, navigate }: { route: Route; navigate: (path: strin
     return (
       <ErrorPage
         code="401"
-        title="Sign in required"
-        detail="Your session is no longer valid."
+        title={t('errors.unauthorizedTitle', 'Sign in required')}
+        detail={t('errors.unauthorizedDetail', 'Your session is no longer valid.')}
         action={() => navigate('/login')}
       />
     );
@@ -641,8 +658,8 @@ function RouteScreen({ route, navigate }: { route: Route; navigate: (path: strin
     return (
       <ErrorPage
         code="403"
-        title="Access denied"
-        detail="You do not have permission to view this resource."
+        title={t('errors.forbiddenTitle', 'Access denied')}
+        detail={t('errors.forbiddenDetail', 'You do not have permission to view this resource.')}
         action={() => navigate('/dashboard')}
       />
     );
@@ -650,8 +667,8 @@ function RouteScreen({ route, navigate }: { route: Route; navigate: (path: strin
     return (
       <ErrorPage
         code="404"
-        title="Page not found"
-        detail="The address does not match a screen in AI Studio."
+        title={t('errors.notFoundTitle', 'Page not found')}
+        detail={t('errors.notFoundDetail', 'The address does not match a screen in AI Studio.')}
         action={() => navigate('/dashboard')}
       />
     );
@@ -669,7 +686,7 @@ function RouteScreen({ route, navigate }: { route: Route; navigate: (path: strin
     return route.name === 'editor' ? (
       <EditorShell project={project} navigate={navigate} />
     ) : (
-      <ProjectOverview project={project} navigate={navigate} />
+      <ProjectScreen project={project} navigate={navigate} />
     );
   }
   return null;
@@ -696,6 +713,7 @@ function PageHeader({
 }
 
 function Dashboard({ navigate }: { navigate: (path: string) => void }) {
+  const { t } = useTranslation();
   const currentWorkspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const allProjects = useStudioStore((state) => state.projects);
   const allJobs = useStudioStore((state) => state.jobs);
@@ -711,42 +729,50 @@ function Dashboard({ navigate }: { navigate: (path: string) => void }) {
   return (
     <div className="mx-auto max-w-[1440px]">
       <PageHeader
-        title="Production overview"
-        description="Projects, media operations and output activity in the current workspace."
+        title={t('dashboard.title')}
+        description={t('dashboard.description')}
         action={
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="mr-2 size-4" />
-            New project
+            {t('dashboard.newProject')}
           </Button>
         }
       />
       <div className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 xl:grid-cols-4">
-        <Metric label="Active projects" value={String(projects.length)} hint="Current workspace" />
         <Metric
-          label="Jobs in progress"
-          value={String(activeJobs.length)}
-          hint={`${jobs.filter((job) => job.status === 'Failed').length} need attention`}
+          label={t('dashboard.activeProjects')}
+          value={String(projects.length)}
+          hint={t('dashboard.currentWorkspace')}
         />
         <Metric
-          label="Assets available"
+          label={t('dashboard.jobsInProgress')}
+          value={String(activeJobs.length)}
+          hint={t('dashboard.needAttentionCount', {
+            count: jobs.filter((job) => job.status === 'Failed').length,
+          })}
+        />
+        <Metric
+          label={t('dashboard.assetsAvailable')}
           value={String(
             useStudioStore
               .getState()
               .assets.filter((asset) => asset.workspaceId === currentWorkspaceId).length,
           )}
-          hint="Originals and media"
+          hint={t('dashboard.originalsAndMedia')}
         />
         <Metric
-          label="Completed renders"
+          label={t('dashboard.completedRenders')}
           value={String(renders.filter((render) => render.status === 'Success').length)}
-          hint="Ready for export"
+          hint={t('dashboard.readyForExport')}
         />
       </div>
       <div className="mt-7 grid gap-7 xl:grid-cols-[1.45fr_0.75fr]">
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Recent projects</h2>
-            <span className="text-xs text-muted-foreground">{projects.length} active</span>
+            <h2 className="text-sm font-semibold">{t('dashboard.recentProjects')}</h2>
+            <span className="text-xs text-muted-foreground">
+              {t('dashboard.activeProjectCount', { count: projects.length })}
+            </span>
           </div>
           {projects.length ? (
             <div className="grid gap-3 md:grid-cols-2">
@@ -778,20 +804,22 @@ function Dashboard({ navigate }: { navigate: (path: string) => void }) {
           ) : (
             <EmptyState
               icon={<Film className="size-5" />}
-              title="No projects yet"
-              description="Create the first project in this workspace."
-              action={<Button onClick={() => setCreateOpen(true)}>Create project</Button>}
+              title={t('dashboard.noProjectsTitle')}
+              description={t('dashboard.noProjectsDesc')}
+              action={
+                <Button onClick={() => setCreateOpen(true)}>{t('dashboard.createProject')}</Button>
+              }
             />
           )}
         </section>
         <section>
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-sm font-semibold">Activity</h2>
+            <h2 className="text-sm font-semibold">{t('dashboard.activity')}</h2>
             <button
               onClick={() => navigate('/jobs')}
               className="text-xs text-primary hover:underline"
             >
-              Open Job Center
+              {t('dashboard.openJobCenter')}
             </button>
           </div>
           <Card className="divide-y divide-border">
@@ -839,6 +867,7 @@ function ProjectDialog({
   onClose: () => void;
   onCreated: (project: ProjectRecord) => void;
 }) {
+  const { t } = useTranslation();
   const createProject = useStudioStore((state) => state.createProject);
   const notify = useStudioStore((state) => state.notify);
   const [name, setName] = useState('');
@@ -875,8 +904,8 @@ function ProjectDialog({
     <Dialog
       open={open}
       onClose={onClose}
-      title="Create project"
-      description="Create the project identity and default editorial format."
+      title={t('createProjectDialog.title')}
+      description={t('createProjectDialog.description')}
     >
       <form
         onSubmit={(event) => {
@@ -885,27 +914,27 @@ function ProjectDialog({
         className="space-y-4"
       >
         <label className="block text-sm font-medium">
-          Project name
+          {t('createProjectDialog.name')}
           <Input
             className="mt-2"
             required
             value={name}
             onChange={(event) => setName(event.target.value)}
-            placeholder="Campaign or production name"
+            placeholder={t('createProjectDialog.namePlaceholder')}
           />
         </label>
         <label className="block text-sm font-medium">
-          Description
+          {t('createProjectDialog.descriptionLabel')}
           <Input
             className="mt-2"
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            placeholder="Short production brief"
+            placeholder={t('createProjectDialog.descPlaceholder')}
           />
         </label>
         <div className="grid grid-cols-2 gap-4">
           <label className="block text-sm font-medium">
-            Aspect ratio
+            {t('createProjectDialog.aspectRatio')}
             <select
               className="studio-select mt-2"
               value={aspectRatio}
@@ -919,7 +948,7 @@ function ProjectDialog({
             </select>
           </label>
           <label className="block text-sm font-medium">
-            Frame rate
+            {t('createProjectDialog.frameRate')}
             <select
               className="studio-select mt-2"
               value={frameRate}
@@ -935,10 +964,10 @@ function ProjectDialog({
         </div>
         <div className="flex justify-end gap-2 pt-3">
           <Button type="button" variant="outline" onClick={onClose} disabled={submitting}>
-            Cancel
+            {t('common.cancel')}
           </Button>
           <Button type="submit" loading={submitting}>
-            Create project
+            {t('createProjectDialog.title')}
           </Button>
         </div>
       </form>
@@ -947,6 +976,7 @@ function ProjectDialog({
 }
 
 function WorkspaceCenter() {
+  const { t } = useTranslation();
   const workspaces = useStudioStore((state) => state.workspaces);
   const projects = useStudioStore((state) => state.projects);
   const currentWorkspaceId = useStudioStore((state) => state.currentWorkspaceId);
@@ -957,12 +987,12 @@ function WorkspaceCenter() {
   return (
     <div className="mx-auto max-w-5xl">
       <PageHeader
-        title="Workspaces"
-        description="Tenant boundaries for projects, members, assets and usage."
+        title={t('workspaces.title')}
+        description={t('workspaces.description')}
         action={
           <Button onClick={() => setOpen(true)}>
             <Plus className="mr-2 size-4" />
-            New workspace
+            {t('workspaces.newWorkspace')}
           </Button>
         }
       />
@@ -986,14 +1016,16 @@ function WorkspaceCenter() {
               <div className="flex-1">
                 <h2 className="font-semibold">{workspace.name}</h2>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  {count} active projects / Owner workspace
+                  {t('workspaces.activeProjects', { count })}
                 </p>
               </div>
               {active ? (
-                <span className="text-sm font-medium text-primary">Current workspace</span>
+                <span className="text-sm font-medium text-primary">
+                  {t('workspaces.currentWorkspace')}
+                </span>
               ) : (
                 <Button variant="outline" onClick={() => selectWorkspace(workspace.id)}>
-                  Switch workspace
+                  {t('workspaces.switchWorkspace')}
                 </Button>
               )}
             </Card>
@@ -1003,8 +1035,8 @@ function WorkspaceCenter() {
       <Dialog
         open={open}
         onClose={() => setOpen(false)}
-        title="Create workspace"
-        description="Create a separate boundary for projects and assets."
+        title={t('workspaces.createTitle')}
+        description={t('workspaces.createDesc')}
       >
         <form
           onSubmit={(event) => {
@@ -1019,7 +1051,7 @@ function WorkspaceCenter() {
           }}
         >
           <label className="block text-sm font-medium">
-            Workspace name
+            {t('workspaces.nameLabel')}
             <Input
               className="mt-2"
               value={name}
@@ -1029,9 +1061,9 @@ function WorkspaceCenter() {
           </label>
           <div className="mt-5 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button type="submit">Create workspace</Button>
+            <Button type="submit">{t('workspaces.createBtn')}</Button>
           </div>
         </form>
       </Dialog>
@@ -1039,13 +1071,14 @@ function WorkspaceCenter() {
   );
 }
 
-function ProjectOverview({
+function ProjectScreen({
   project,
   navigate,
 }: {
   project: ProjectRecord;
   navigate: (path: string) => void;
 }) {
+  const { t } = useTranslation();
   const updateProject = useStudioStore((state) => state.updateProject);
   const archiveProject = useStudioStore((state) => state.archiveProject);
   const allAssets = useStudioStore((state) => state.assets);
@@ -1064,65 +1097,81 @@ function ProjectOverview({
         action={
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setEditOpen(true)}>
-              Edit project
+              {t('projectOverview.editProject')}
             </Button>
             <Button onClick={() => navigate(`/projects/${project.id}/editor`)}>
               <Clapperboard className="mr-2 size-4" />
-              Open editor
+              {t('projectOverview.openEditor')}
             </Button>
           </div>
         }
       />
       <div className="grid gap-5 md:grid-cols-3">
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Editorial format</p>
+          <p className="text-xs text-muted-foreground">{t('projectOverview.editorialFormat')}</p>
           <p className="mt-3 font-mono text-lg">
             {project.aspectRatio} / {project.frameRate} fps
           </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Assets</p>
-          <p className="mt-3 font-mono text-lg">{assets.length} linked</p>
+          <p className="text-xs text-muted-foreground">{t('projectOverview.assets')}</p>
+          <p className="mt-3 font-mono text-lg">
+            {t('projectOverview.linkedAssets', { count: assets.length })}
+          </p>
         </Card>
         <Card className="p-5">
-          <p className="text-xs text-muted-foreground">Operations</p>
+          <p className="text-xs text-muted-foreground">{t('projectOverview.operations')}</p>
           <p className="mt-3 font-mono text-lg">
-            {jobs.filter((job) => job.status === 'Running').length} running
+            {t('projectOverview.runningOperations', {
+              count: jobs.filter((job) => job.status === 'Running').length,
+            })}
           </p>
         </Card>
       </div>
       <div className="mt-7 grid gap-7 lg:grid-cols-[1fr_320px]">
         <Card className="overflow-hidden">
           <div className="border-b border-border p-5">
-            <h2 className="font-semibold">Project structure</h2>
+            <h2 className="font-semibold">{t('projectOverview.projectStructure')}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              The production objects prepared for editing.
+              {t('projectOverview.projectStructureDescription')}
             </p>
           </div>
           <div className="grid gap-px bg-border sm:grid-cols-2 xl:grid-cols-4">
-            <ProjectModule icon={<FileText />} name="Kịch bản" meta="Bản thảo / Tự động lưu" />
-            <ProjectModule icon={<Layers3 />} name="Storyboard" meta="1 board / 6 scenes" />
-            <ProjectModule icon={<Clapperboard />} name="Timeline" meta="Main sequence / Draft" />
+            <ProjectModule
+              icon={<FileText />}
+              name={t('projectOverview.modules.script')}
+              meta={t('projectOverview.modules.scriptMeta')}
+            />
+            <ProjectModule
+              icon={<Layers3 />}
+              name={t('projectOverview.modules.storyboard')}
+              meta={t('projectOverview.modules.storyboardMeta')}
+            />
+            <ProjectModule
+              icon={<Clapperboard />}
+              name={t('projectOverview.modules.timeline')}
+              meta={t('projectOverview.modules.timelineMeta')}
+            />
             <ProjectModule
               icon={<Boxes />}
-              name="Asset collection"
-              meta={`${assets.length} references`}
+              name={t('projectOverview.modules.assetCollection')}
+              meta={t('projectOverview.modules.references', { count: assets.length })}
             />
           </div>
         </Card>
         <Card className="p-5">
-          <h2 className="font-semibold">Lifecycle</h2>
+          <h2 className="font-semibold">{t('projectOverview.lifecycle')}</h2>
           <dl className="mt-4 space-y-3 text-sm">
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Status</dt>
+              <dt className="text-muted-foreground">{t('common.status')}</dt>
               <dd>{project.status}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Updated</dt>
+              <dt className="text-muted-foreground">{t('projectOverview.updated')}</dt>
               <dd>{relativeTime(project.updatedAt)}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-muted-foreground">Version</dt>
+              <dt className="text-muted-foreground">{t('projectOverview.version')}</dt>
               <dd>Foundation v1</dd>
             </div>
           </dl>
@@ -1135,15 +1184,15 @@ function ProjectOverview({
             }}
           >
             <Archive className="mr-2 size-4" />
-            Archive project
+            {t('projectOverview.archiveProject')}
           </Button>
         </Card>
       </div>
       <Dialog
         open={editOpen}
         onClose={() => setEditOpen(false)}
-        title="Edit project"
-        description="Update project metadata without changing timeline data."
+        title={t('projectOverview.editProject')}
+        description={t('projectOverview.editProjectDescription')}
       >
         <form
           onSubmit={(event) => {
@@ -1153,7 +1202,7 @@ function ProjectOverview({
           }}
         >
           <label className="block text-sm font-medium">
-            Name
+            {t('projectOverview.name')}
             <Input
               className="mt-2"
               value={name}
@@ -1161,7 +1210,7 @@ function ProjectOverview({
             />
           </label>
           <label className="mt-4 block text-sm font-medium">
-            Description
+            {t('projectOverview.description')}
             <Input
               className="mt-2"
               value={description}
@@ -1170,9 +1219,9 @@ function ProjectOverview({
           </label>
           <div className="mt-5 flex justify-end gap-2">
             <Button type="button" variant="outline" onClick={() => setEditOpen(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
-            <Button type="submit">Save project</Button>
+            <Button type="submit">{t('projectOverview.saveProject')}</Button>
           </div>
         </form>
       </Dialog>
@@ -1205,22 +1254,37 @@ interface ProjectTimelineClip {
 const EMPTY_PRODUCTION_SCENES: ProductionScene[] = [];
 
 function buildTimelineFromScenes(scenes: ProductionScene[]) {
-  const sceneDuration = 5;
-  const totalSeconds = Math.max(sceneDuration, scenes.length * sceneDuration);
-  const clipsFor = (type: ProjectTimelineClip['type']): ProjectTimelineClip[] =>
-    scenes.map((scene, index) => ({
-      id: `${type}-${scene.id}`,
+  let cursorSeconds = 0;
+  const sceneTimings = scenes.map((scene) => {
+    const durationSeconds = getSceneDuration(scene);
+    const timing = {
       sceneId: scene.id,
-      type,
-      left: ((index * sceneDuration) / totalSeconds) * 100,
-      width: (sceneDuration / totalSeconds) * 100,
-      startSeconds: index * sceneDuration,
-      durationSeconds: sceneDuration,
-      name: type === 'visual' ? scene.title : scene.narration,
-      content: type === 'visual' ? scene.visual : scene.narration,
-    }));
+      startSeconds: cursorSeconds,
+      durationSeconds,
+      endSeconds: cursorSeconds + durationSeconds,
+    };
+    cursorSeconds = timing.endSeconds;
+    return timing;
+  });
+  const totalSeconds = Math.max(DEFAULT_SCENE_DURATION_SECONDS, cursorSeconds);
+  const clipsFor = (type: ProjectTimelineClip['type']): ProjectTimelineClip[] =>
+    scenes.map((scene, index) => {
+      const timing = sceneTimings[index];
+      return {
+        id: `${type}-${scene.id}`,
+        sceneId: scene.id,
+        type,
+        left: (timing.startSeconds / totalSeconds) * 100,
+        width: (timing.durationSeconds / totalSeconds) * 100,
+        startSeconds: timing.startSeconds,
+        durationSeconds: timing.durationSeconds,
+        name: type === 'visual' ? scene.title : scene.narration,
+        content: type === 'visual' ? scene.visual : scene.narration,
+      };
+    });
   return {
     totalSeconds,
+    sceneTimings,
     rows: [
       { id: 'script-visuals', label: 'V1', name: 'sceneVisuals', clips: clipsFor('visual') },
       { id: 'script-voice', label: 'A1', name: 'sceneNarration', clips: clipsFor('voice') },
@@ -1238,12 +1302,39 @@ function EditorShell({
   const { t } = useTranslation('editor');
   const editor = useStudioStore((state) => state.editor);
   const setEditor = useStudioStore((state) => state.setEditor);
+  const notify = useStudioStore((state) => state.notify);
   const [workspaceMode, setWorkspaceMode] = useState<'timeline' | 'script'>('timeline');
+  const [exporting, setExporting] = useState(false);
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const allAssets = useStudioStore((state) => state.assets);
   const allJobs = useStudioStore((state) => state.jobs);
   const assets = allAssets.filter((asset) => asset.workspaceId === workspaceId);
   const jobs = allJobs.filter((job) => job.projectId === project.id);
+
+  useEffect(() => {
+    if (project?.id) {
+      void useTimelineStore.getState().loadFromBackend(project.id);
+    }
+  }, [project?.id]);
+
+  const handleExportVideo = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await useTimelineStore.getState().flushAutoSave();
+      await queueProjectVideoExport(project.id, {
+        frameRate: project.frameRate,
+        aspectRatio: project.aspectRatio,
+        projectName: project.name,
+      });
+      notify(t('export.queued'));
+      navigate('/renders');
+    } catch (error) {
+      notify(t('export.failed', { message: getApiError(error).message }));
+    } finally {
+      setExporting(false);
+    }
+  };
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col bg-[#0d1012] text-zinc-200">
       <div className="flex h-12 items-center gap-1 border-b border-white/8 px-3">
@@ -1300,7 +1391,12 @@ function EditorShell({
           <span>
             {workspaceMode === 'script' ? t('status.scriptAutoSave') : t('status.timelineSaved')}
           </span>
-          {workspaceMode === 'timeline' && <Button size="sm">{t('actions.render')}</Button>}
+          {workspaceMode === 'timeline' && (
+            <Button size="sm" onClick={() => void handleExportVideo()} disabled={exporting}>
+              {exporting && <RefreshCw className="mr-2 size-3.5 animate-spin" aria-hidden="true" />}
+              {exporting ? t('export.queueing') : t('actions.render')}
+            </Button>
+          )}
         </div>
       </div>
       {workspaceMode === 'script' ? (
@@ -1350,7 +1446,7 @@ function EditorShell({
               </button>
             </div>
             {editor.leftPanel === 'workflow' && <WorkflowPanel project={project} />}
-            {editor.leftPanel === 'assets' && <EditorAssets assets={assets} />}
+            {editor.leftPanel === 'assets' && <ProjectEditorAssets assets={assets} />}
             {editor.leftPanel === 'jobs' && <EditorJobs jobs={jobs} />}
           </aside>
           <section className="grid min-h-0 grid-rows-[minmax(280px,1fr)_300px]">
@@ -1360,63 +1456,6 @@ function EditorShell({
           <Inspector project={project} />
         </div>
       )}
-    </div>
-  );
-}
-
-function EditorAssets({
-  assets,
-}: {
-  assets: ReturnType<typeof useStudioStore.getState>['assets'];
-}) {
-  const [search, setSearch] = useState('');
-  const [selectedId, setSelectedId] = useState(assets[0]?.id);
-  const visible = assets.filter((asset) => asset.name.toLowerCase().includes(search.toLowerCase()));
-  const selected = assets.find((asset) => asset.id === selectedId);
-  return (
-    <div className="min-h-0 flex-1 overflow-auto">
-      <div className="p-3">
-        <div className="relative mb-3">
-          <Search className="absolute left-2.5 top-2.5 size-3.5 text-zinc-500" />
-          <input
-            className="h-8 w-full rounded-md border border-white/10 bg-black/20 pl-8 pr-2 text-xs outline-none focus:border-primary"
-            placeholder="Search assets"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {visible.slice(0, 8).map((asset) => {
-            const detail = getAssetPipelineDetail(asset);
-            return (
-              <button
-                key={asset.id}
-                onClick={() => setSelectedId(asset.id)}
-                className={cn(
-                  'overflow-hidden rounded-lg border bg-white/[0.025] text-left',
-                  asset.id === selectedId
-                    ? 'border-primary'
-                    : 'border-white/8 hover:border-primary/50',
-                )}
-              >
-                <div
-                  className="grid aspect-video place-items-center"
-                  style={{ backgroundColor: asset.color }}
-                >
-                  <AssetIcon kind={asset.kind} className="size-5 text-white/70" />
-                </div>
-                <div className="flex items-center gap-1 p-2">
-                  <p className="min-w-0 flex-1 truncate text-[11px] text-zinc-300">{asset.name}</p>
-                  <span className="font-mono text-[9px] text-zinc-600">
-                    v{detail.versions.length}
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-      {selected && <CompactAssetVersions asset={selected} />}
     </div>
   );
 }
@@ -1448,14 +1487,136 @@ function PreviewCanvas({
   playhead: number;
 }) {
   const { t } = useTranslation('editor');
+  const notify = useStudioStore((state) => state.notify);
   const [playing, setPlaying] = useState(false);
+  const [voiceUrls, setVoiceUrls] = useState<Record<string, string>>({});
+  const [voicePreparing, setVoicePreparing] = useState(false);
+  const [voicePreparationError, setVoicePreparationError] = useState<string | null>(null);
+  const [voiceProgress, setVoiceProgress] = useState({ ready: 0, total: 0 });
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const activeAudioSceneIdRef = useRef<string | null>(null);
   const setEditor = useStudioStore((state) => state.setEditor);
+  const updateSceneTiming = useProductionFlowStore((state) => state.updateSceneTiming);
+  const persistSceneTiming = useProductionFlowStore((state) => state.persistSceneTiming);
   const scenes = useProductionFlowStore(
     (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
-  const activeScene =
-    scenes.length > 0 ? scenes[Math.min(scenes.length - 1, Math.floor(playhead / 5))] : undefined;
-  const totalSeconds = Math.max(5, scenes.length * 5);
+  const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const activeSceneIndex = timeline.sceneTimings.findIndex(
+    (timing, index) =>
+      playhead >= timing.startSeconds &&
+      (playhead < timing.endSeconds || index === timeline.sceneTimings.length - 1),
+  );
+  const activeScene = activeSceneIndex >= 0 ? scenes[activeSceneIndex] : undefined;
+  const totalSeconds = timeline.totalSeconds;
+  const narrationSignature = useMemo(
+    () => scenes.map((scene) => `${scene.id}:${scene.narration}`).join('|'),
+    [scenes],
+  );
+
+  useEffect(() => {
+    let mounted = true;
+    const scenesWithNarration = scenes.filter((scene) => scene.narration.trim().length > 0);
+    if (scenesWithNarration.length === 0) {
+      setVoiceUrls({});
+      setVoicePreparing(false);
+      setVoicePreparationError(null);
+      setVoiceProgress({ ready: 0, total: 0 });
+      return () => {
+        mounted = false;
+      };
+    }
+
+    setVoicePreparing(true);
+    setVoicePreparationError(null);
+    setVoiceProgress({ ready: 0, total: scenesWithNarration.length });
+
+    void prepareProjectVoicePlayback(projectId, scenesWithNarration, (progress) => {
+      if (mounted) setVoiceProgress({ ready: progress.ready, total: progress.total });
+    })
+      .then((result) => {
+        if (!mounted) return;
+        setVoiceUrls(result.audioUrls);
+
+        const changedSceneIds: string[] = [];
+        for (const scene of scenesWithNarration) {
+          const voiceDurationSeconds = result.durationSecondsByScene[scene.id];
+          if (!voiceDurationSeconds) continue;
+
+          const minimumDuration = getMinimumSceneDuration({
+            ...scene,
+            voiceDurationSeconds,
+          });
+          const durationSeconds = roundSceneDuration(
+            Math.max(scene.durationSeconds ?? DEFAULT_SCENE_DURATION_SECONDS, minimumDuration),
+          );
+          const timingChanged =
+            Math.abs((scene.durationSeconds ?? DEFAULT_SCENE_DURATION_SECONDS) - durationSeconds) >
+              0.001 || Math.abs((scene.voiceDurationSeconds ?? 0) - voiceDurationSeconds) > 0.001;
+          if (!timingChanged) continue;
+
+          updateSceneTiming(projectId, scene.id, { durationSeconds, voiceDurationSeconds });
+          changedSceneIds.push(scene.id);
+        }
+
+        void (async () => {
+          for (const sceneId of changedSceneIds) {
+            try {
+              await persistSceneTiming(projectId, sceneId);
+            } catch (error: unknown) {
+              notify(`Không lưu được thời lượng cảnh: ${getApiError(error).message}`);
+            }
+          }
+        })();
+      })
+      .catch((error: unknown) => {
+        if (!mounted) return;
+        const apiError = getApiError(error);
+        setVoicePreparationError(apiError.message);
+        notify(`Không chuẩn bị được giọng đọc: ${apiError.message}`);
+      })
+      .finally(() => {
+        if (mounted) setVoicePreparing(false);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, [narrationSignature, notify, persistSceneTiming, projectId, scenes, updateSceneTiming]);
+
+  const playVoiceForScene = (sceneIndex: number, offsetSeconds = 0): boolean => {
+    const scene = scenes[sceneIndex];
+    if (!scene?.narration.trim()) {
+      audioRef.current?.pause();
+      activeAudioSceneIdRef.current = scene?.id ?? null;
+      return true;
+    }
+
+    const audioUrl = voiceUrls[scene.id];
+    const audio = audioRef.current;
+    if (!audioUrl || !audio) return false;
+
+    audio.pause();
+    audio.src = audioUrl;
+    audio.load();
+    if (offsetSeconds > 0) {
+      audio.addEventListener(
+        'loadedmetadata',
+        () => {
+          audio.currentTime = Math.min(offsetSeconds, Math.max(0, audio.duration - 0.05));
+        },
+        { once: true },
+      );
+    }
+
+    activeAudioSceneIdRef.current = scene.id;
+    void audio.play().catch((error: unknown) => {
+      setPlaying(false);
+      const apiError = getApiError(error);
+      notify(`Không phát được giọng đọc: ${apiError.message}`);
+    });
+    return true;
+  };
 
   useEffect(() => {
     if (!playing) return;
@@ -1483,14 +1644,61 @@ function PreviewCanvas({
   }, [playing, setEditor, totalSeconds]);
 
   const togglePlayback = () => {
-    if (!playing && playhead >= totalSeconds) {
-      setEditor({ playhead: 0 });
+    if (playing) {
+      audioRef.current?.pause();
+      setPlaying(false);
+      return;
     }
-    setPlaying((current) => !current);
+
+    if (voicePreparing) {
+      notify(`Đang chuẩn bị giọng đọc (${voiceProgress.ready}/${voiceProgress.total})`);
+      return;
+    }
+
+    const nextPlayhead = playhead >= totalSeconds ? 0 : playhead;
+    const nextSceneIndex = timeline.sceneTimings.findIndex(
+      (timing, index) =>
+        nextPlayhead >= timing.startSeconds &&
+        (nextPlayhead < timing.endSeconds || index === timeline.sceneTimings.length - 1),
+    );
+    if (nextPlayhead !== playhead) setEditor({ playhead: nextPlayhead });
+
+    const sceneOffset =
+      nextSceneIndex >= 0 ? nextPlayhead - timeline.sceneTimings[nextSceneIndex].startSeconds : 0;
+    if (nextSceneIndex >= 0 && !playVoiceForScene(nextSceneIndex, sceneOffset)) {
+      notify(
+        voicePreparationError
+          ? `Chưa có giọng đọc: ${voicePreparationError}`
+          : 'Giọng đọc chưa sẵn sàng.',
+      );
+      return;
+    }
+
+    setPlaying(true);
   };
 
+  useEffect(() => {
+    if (!playing) {
+      audioRef.current?.pause();
+      activeAudioSceneIdRef.current = null;
+      return;
+    }
+
+    const scene = scenes[activeSceneIndex];
+    if (!scene || activeAudioSceneIdRef.current === scene.id) return;
+    if (!playVoiceForScene(activeSceneIndex)) setPlaying(false);
+  }, [activeSceneIndex, playing, scenes, voiceUrls]);
+
+  useEffect(
+    () => () => {
+      audioRef.current?.pause();
+    },
+    [],
+  );
+
   return (
-    <div className="relative flex min-h-0 items-center justify-center bg-[#090b0c] p-5">
+    <div className="relative flex min-h-0 flex-col items-center justify-center bg-[#090b0c] p-5">
+      <audio ref={audioRef} preload="auto" />
       <div
         className={cn(
           'relative overflow-hidden border border-white/10 bg-[#1d2529] shadow-2xl shadow-black/40',
@@ -1501,36 +1709,51 @@ function PreviewCanvas({
               : 'w-[72%] aspect-video',
         )}
       >
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_35%,rgba(92,142,158,0.28),transparent_38%),linear-gradient(145deg,#202a2f,#111517_65%)]" />
-        <div className="absolute bottom-5 left-5">
+        {activeScene && isImageUrl(activeScene.visual) ? (
+          <img
+            src={activeScene.visual}
+            alt={activeScene.title || t('timeline.untitledClip')}
+            className="absolute inset-0 size-full object-cover"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_60%_35%,rgba(92,142,158,0.28),transparent_38%),linear-gradient(145deg,#202a2f,#111517_65%)]" />
+        )}
+        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent px-5 pb-5 pt-16">
           <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
             {t('preview.currentFrame')}
           </p>
           <p className="mt-1 text-sm font-medium text-zinc-100">
             {activeScene?.title ?? t('timeline.emptyTitle')}
           </p>
-          {activeScene?.visual && (
-            <p className="mt-2 max-w-[70%] text-[11px] leading-5 text-zinc-400">
-              {activeScene.visual}
-            </p>
-          )}
-        </div>
-        <div className="absolute inset-0 grid place-items-center">
-          <button
-            className="grid size-12 place-items-center rounded-full bg-zinc-100/90 text-zinc-900 shadow-xl"
-            onClick={togglePlayback}
-            aria-label={playing ? t('preview.pause') : t('preview.play')}
-          >
-            {playing ? (
-              <Pause className="size-5 fill-current" />
-            ) : (
-              <Play className="ml-0.5 size-5 fill-current" />
-            )}
-          </button>
         </div>
       </div>
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-md border border-white/8 bg-black/60 px-2 py-1 font-mono text-[10px] text-zinc-400">
-        {formatTime(Math.min(playhead, totalSeconds))} / {formatTime(totalSeconds)}
+      <div className="mt-3 flex w-[72%] items-center justify-between rounded-md border border-white/8 bg-[#111517] px-3 py-1.5">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="grid size-8 shrink-0 place-items-center rounded-md bg-zinc-100 text-zinc-900 transition-colors hover:bg-white disabled:cursor-wait disabled:opacity-60"
+            onClick={togglePlayback}
+            disabled={voicePreparing}
+            aria-label={playing ? t('preview.pause') : t('preview.play')}
+            title={playing ? t('preview.pause') : t('preview.play')}
+          >
+            {voicePreparing ? (
+              <RefreshCw className="size-4 animate-spin" />
+            ) : playing ? (
+              <Pause className="size-4 fill-current" />
+            ) : (
+              <Play className="ml-0.5 size-4 fill-current" />
+            )}
+          </button>
+          {voicePreparing && (
+            <span className="text-[10px] text-zinc-400">
+              Đang chuẩn bị giọng đọc {voiceProgress.ready}/{voiceProgress.total}
+            </span>
+          )}
+        </div>
+        <div className="font-mono text-[10px] text-zinc-400">
+          {formatTime(Math.min(playhead, totalSeconds))} / {formatTime(totalSeconds)}
+        </div>
       </div>
     </div>
   );
@@ -1540,13 +1763,24 @@ function TimelineShell({ projectId }: { projectId: string }) {
   const { t } = useTranslation('editor');
   const editor = useStudioStore((state) => state.editor);
   const setEditor = useStudioStore((state) => state.setEditor);
+  const notify = useStudioStore((state) => state.notify);
+  const updateSceneTiming = useProductionFlowStore((state) => state.updateSceneTiming);
+  const persistSceneTiming = useProductionFlowStore((state) => state.persistSceneTiming);
+  const resizeStateRef = useRef<{
+    sceneId: string;
+    startX: number;
+    startDuration: number;
+    trackWidth: number;
+    totalSeconds: number;
+  } | null>(null);
   const scenes = useProductionFlowStore(
     (state) => state.projects[projectId]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
   const timeline = useMemo(() => buildTimelineFromScenes(scenes), [scenes]);
+  const rulerStep = Math.max(5, Math.ceil(timeline.totalSeconds / 50) * 5);
   const rulerMarks = Array.from(
-    { length: Math.min(11, Math.max(2, Math.ceil(timeline.totalSeconds / 5) + 1)) },
-    (_, index) => Math.min(index * 5, timeline.totalSeconds),
+    { length: Math.max(2, Math.ceil(timeline.totalSeconds / rulerStep) + 1) },
+    (_, index) => Math.min(index * rulerStep, timeline.totalSeconds),
   );
   const timelineRows = timeline.rows;
   return (
@@ -1604,12 +1838,21 @@ function TimelineShell({ projectId }: { projectId: string }) {
           {timelineRows.map((track) => (
             <div
               key={track.id}
+              data-timeline-track
               className="relative h-12 border-b border-white/8 bg-[linear-gradient(90deg,rgba(255,255,255,0.025)_1px,transparent_1px)] bg-[length:10%_100%]"
             >
               {track.clips.map((clip) => (
-                <button
+                <div
                   key={clip.id}
                   onClick={() => setEditor({ selectedClipId: clip.id })}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault();
+                      setEditor({ selectedClipId: clip.id });
+                    }
+                  }}
+                  role="button"
+                  tabIndex={0}
                   className={cn(
                     'absolute top-1.5 h-9 overflow-hidden rounded-md border px-2 text-left text-[10px]',
                     track.id === 'script-voice'
@@ -1623,7 +1866,76 @@ function TimelineShell({ projectId }: { projectId: string }) {
                   {track.id === 'script-voice' && (
                     <span className="absolute inset-x-2 bottom-1 h-1 bg-[repeating-linear-gradient(90deg,rgba(110,231,183,.45)_0_2px,transparent_2px_5px)]" />
                   )}
-                </button>
+                  {editor.selectedClipId === clip.id && (
+                    <span
+                      role="separator"
+                      aria-label="Kéo để chỉnh thời lượng cảnh"
+                      aria-orientation="vertical"
+                      className="absolute inset-y-0 right-0 z-10 w-2 cursor-ew-resize border-r-2 border-primary bg-primary/20 hover:bg-primary/40"
+                      onClick={(event) => event.stopPropagation()}
+                      onPointerDown={(event) => {
+                        event.stopPropagation();
+                        const trackElement = event.currentTarget.closest('[data-timeline-track]');
+                        if (!(trackElement instanceof HTMLElement)) return;
+                        event.currentTarget.setPointerCapture(event.pointerId);
+                        resizeStateRef.current = {
+                          sceneId: clip.sceneId,
+                          startX: event.clientX,
+                          startDuration: clip.durationSeconds,
+                          trackWidth: trackElement.getBoundingClientRect().width,
+                          totalSeconds: timeline.totalSeconds,
+                        };
+                      }}
+                      onPointerMove={(event) => {
+                        const resize = resizeStateRef.current;
+                        if (!resize || !event.currentTarget.hasPointerCapture(event.pointerId)) {
+                          return;
+                        }
+                        const scene = useProductionFlowStore
+                          .getState()
+                          .projects[projectId]?.scenes.find((item) => item.id === resize.sceneId);
+                        if (!scene) return;
+
+                        const deltaSeconds =
+                          ((event.clientX - resize.startX) / resize.trackWidth) *
+                          resize.totalSeconds;
+                        const durationSeconds = roundSceneDuration(
+                          Math.max(
+                            getMinimumSceneDuration(scene),
+                            resize.startDuration + deltaSeconds,
+                          ),
+                        );
+                        updateSceneTiming(projectId, resize.sceneId, { durationSeconds });
+                      }}
+                      onPointerUp={(event) => {
+                        const resize = resizeStateRef.current;
+                        resizeStateRef.current = null;
+                        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                          event.currentTarget.releasePointerCapture(event.pointerId);
+                        }
+                        if (!resize) return;
+                        void persistSceneTiming(projectId, resize.sceneId).catch((error: unknown) =>
+                          notify(`Không lưu được thời lượng cảnh: ${getApiError(error).message}`),
+                        );
+                      }}
+                      onPointerCancel={(event) => {
+                        const resize = resizeStateRef.current;
+                        resizeStateRef.current = null;
+                        if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+                          event.currentTarget.releasePointerCapture(event.pointerId);
+                        }
+                        if (resize) {
+                          void persistSceneTiming(projectId, resize.sceneId).catch(
+                            (error: unknown) =>
+                              notify(
+                                `Không lưu được thời lượng cảnh: ${getApiError(error).message}`,
+                              ),
+                          );
+                        }
+                      }}
+                    />
+                  )}
+                </div>
               ))}
             </div>
           ))}
@@ -1668,7 +1980,17 @@ function TimelineShell({ projectId }: { projectId: string }) {
 
 function Inspector({ project }: { project: ProjectRecord }) {
   const { t } = useTranslation('editor');
+  const notify = useStudioStore((state) => state.notify);
+  const updateSceneTiming = useProductionFlowStore((state) => state.updateSceneTiming);
+  const persistSceneTiming = useProductionFlowStore((state) => state.persistSceneTiming);
   const selectedClipId = useStudioStore((state) => state.editor.selectedClipId);
+  const [voiceJob, setVoiceJob] = useState<{
+    clipId: string;
+    status: string;
+    progress: number;
+    audioUrl?: string | null;
+  } | null>(null);
+  const [voiceBusy, setVoiceBusy] = useState(false);
   const scenes = useProductionFlowStore(
     (state) => state.projects[project.id]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
@@ -1676,6 +1998,66 @@ function Inspector({ project }: { project: ProjectRecord }) {
   const selectedClip = timeline.rows
     .flatMap((row) => row.clips)
     .find((clip) => clip.id === selectedClipId);
+  const selectedScene = scenes.find((scene) => scene.id === selectedClip?.sceneId);
+  const minimumSceneDuration = selectedScene ? getMinimumSceneDuration(selectedScene) : 1;
+  const selectedVoiceJob = voiceJob?.clipId === selectedClip?.id ? voiceJob : null;
+  const canGenerateVoice = selectedClip?.type === 'voice' && selectedClip.content.trim().length > 0;
+
+  const handleGenerateVoice = async () => {
+    if (!selectedClip || selectedClip.type !== 'voice' || !selectedClip.content.trim()) return;
+
+    setVoiceBusy(true);
+    setVoiceJob({
+      clipId: selectedClip.id,
+      status: 'Queued',
+      progress: 0,
+    });
+
+    try {
+      const result = await prepareProjectVoicePlayback(
+        project.id,
+        [{ id: selectedClip.sceneId, narration: selectedClip.content }],
+        (progress) => {
+          const percentage =
+            progress.total > 0 ? Math.round((progress.ready / progress.total) * 100) : 0;
+          setVoiceJob({
+            clipId: selectedClip.id,
+            status: progress.status === 'ready' ? 'Completed' : 'Processing',
+            progress: percentage,
+          });
+        },
+      );
+      const audioUrl = result.audioUrls[selectedClip.sceneId];
+      if (!audioUrl) throw new Error('Cảnh đã hoàn thành nhưng không trả về audioUrl.');
+
+      setVoiceJob({
+        clipId: selectedClip.id,
+        status: 'Completed',
+        progress: 100,
+        audioUrl,
+      });
+
+      await new Audio(audioUrl).play();
+      notify('Đã tạo và phát giọng đọc cho clip đã chọn');
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      notify(`Không tạo được giọng đọc: ${apiError.message}`);
+    } finally {
+      setVoiceBusy(false);
+    }
+  };
+
+  const handlePlayGeneratedVoice = async () => {
+    if (!selectedVoiceJob?.audioUrl) return;
+
+    try {
+      await new Audio(selectedVoiceJob.audioUrl).play();
+    } catch (error: unknown) {
+      const apiError = getApiError(error);
+      notify(`Không phát được audio: ${apiError.message}`);
+    }
+  };
+
   return (
     <aside className="hidden min-h-0 overflow-auto border-l border-white/8 bg-[#111517] p-4 2xl:block">
       <div className="flex items-center justify-between">
@@ -1698,10 +2080,43 @@ function Inspector({ project }: { project: ProjectRecord }) {
               label={t('inspector.position')}
               value={formatTime(selectedClip.startSeconds)}
             />
-            <InspectorField
-              label={t('inspector.duration')}
-              value={formatTime(selectedClip.durationSeconds)}
-            />
+            <div>
+              <dt className="text-zinc-500">{t('inspector.duration')}</dt>
+              <dd className="mt-1">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    min={minimumSceneDuration}
+                    max={3600}
+                    step={0.1}
+                    value={selectedClip.durationSeconds}
+                    onChange={(event) => {
+                      if (!selectedScene) return;
+                      const parsed = Number(event.target.value);
+                      if (!Number.isFinite(parsed)) return;
+                      updateSceneTiming(project.id, selectedScene.id, {
+                        durationSeconds: roundSceneDuration(Math.max(minimumSceneDuration, parsed)),
+                      });
+                    }}
+                    onBlur={() => {
+                      if (!selectedScene) return;
+                      void persistSceneTiming(project.id, selectedScene.id).catch(
+                        (error: unknown) =>
+                          notify(`Không lưu được thời lượng cảnh: ${getApiError(error).message}`),
+                      );
+                    }}
+                    className="h-8 w-full rounded-md border border-white/10 bg-black/20 px-2 font-mono text-xs text-zinc-200 outline-none focus:border-primary"
+                    aria-label="Thời lượng cảnh tính bằng giây"
+                  />
+                  <span className="text-[10px] text-zinc-500">giây</span>
+                </div>
+                {selectedScene?.voiceDurationSeconds ? (
+                  <p className="mt-1 text-[10px] text-emerald-400/80">
+                    Tối thiểu {minimumSceneDuration.toFixed(1)}s để đọc hết lời
+                  </p>
+                ) : null}
+              </dd>
+            </div>
             <InspectorField
               label={t('inspector.content')}
               value={selectedClip.content || t('inspector.noContent')}
@@ -1718,10 +2133,40 @@ function Inspector({ project }: { project: ProjectRecord }) {
           <span>{t('inspector.transform')}</span>
           <ChevronDown className="size-3.5 text-zinc-500" />
         </button>
-        <button className="mt-4 flex w-full items-center justify-between text-xs">
-          <span>{t('inspector.audio')}</span>
-          <ChevronDown className="size-3.5 text-zinc-500" />
-        </button>
+        <div className="mt-4 space-y-3">
+          <button className="flex w-full items-center justify-between text-xs">
+            <span>{t('inspector.audio')}</span>
+            <ChevronDown className="size-3.5 text-zinc-500" />
+          </button>
+          {selectedClip?.type === 'voice' && (
+            <div className="rounded-md border border-white/8 bg-black/15 p-2.5">
+              <Button
+                size="sm"
+                className="w-full justify-center"
+                disabled={!canGenerateVoice || voiceBusy}
+                onClick={() => {
+                  if (selectedVoiceJob?.audioUrl) {
+                    void handlePlayGeneratedVoice();
+                  } else {
+                    void handleGenerateVoice();
+                  }
+                }}
+              >
+                {voiceBusy ? (
+                  <RefreshCw className="mr-2 size-3.5 animate-spin" />
+                ) : (
+                  <Volume2 className="mr-2 size-3.5" />
+                )}
+                {selectedVoiceJob?.audioUrl ? 'Phát giọng đọc' : 'Tạo giọng đọc'}
+              </Button>
+              {selectedVoiceJob && (
+                <p className="mt-2 font-mono text-[10px] text-zinc-500">
+                  {selectedVoiceJob.status} · {selectedVoiceJob.progress}%
+                </p>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </aside>
   );
@@ -1739,6 +2184,7 @@ function InspectorField({ label, value }: { label: string; value: string }) {
 }
 
 function AssetLibrary() {
+  const { t } = useTranslation();
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const allAssets = useStudioStore((state) => state.assets);
   const assets = allAssets.filter((asset) => asset.workspaceId === workspaceId);
@@ -1774,12 +2220,12 @@ function AssetLibrary() {
   return (
     <div className="mx-auto max-w-[1500px]">
       <PageHeader
-        title="Asset Library"
-        description="Workspace media catalog with immutable asset references."
+        title={t('assetLibrary.title')}
+        description={t('assetLibrary.description')}
         action={
           <Button onClick={() => notify('Mock upload queued in Asset Ingestion')}>
             <Upload className="mr-2 size-4" />
-            Upload asset
+            {t('assetLibrary.uploadAsset')}
           </Button>
         }
       />
@@ -1802,7 +2248,13 @@ function AssetLibrary() {
                 : 'text-muted-foreground hover:bg-accent hover:text-foreground',
             )}
           >
-            {tab}
+            {tab === 'Uploads'
+              ? t('assetLibrary.tabs.uploads')
+              : tab === 'Images'
+                ? t('assetLibrary.tabs.images')
+                : tab === 'Videos'
+                  ? t('assetLibrary.tabs.videos')
+                  : 'Pexels'}
           </button>
         ))}
       </div>
@@ -1811,7 +2263,7 @@ function AssetLibrary() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-[190px_minmax(0,1fr)_260px]">
           <Card className="p-3">
-            <p className="px-2 py-2 text-xs font-semibold">Folders</p>
+            <p className="px-2 py-2 text-xs font-semibold">{t('assetLibrary.folders')}</p>
             <div className="mt-1 space-y-1">
               {folders.map((item) => (
                 <button
@@ -1829,7 +2281,9 @@ function AssetLibrary() {
                   ) : (
                     <Folder className="size-4" />
                   )}
-                  <span className="truncate">{item}</span>
+                  <span className="truncate">
+                    {item === 'All assets' ? t('assetLibrary.allAssets') : item}
+                  </span>
                 </button>
               ))}
             </div>
@@ -1843,7 +2297,7 @@ function AssetLibrary() {
                   className="pl-9"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search assets"
+                  placeholder={t('assetLibrary.searchPlaceholder')}
                 />
               </div>
               <select
@@ -1852,16 +2306,18 @@ function AssetLibrary() {
                 value={kind}
                 onChange={(event) => setKind(event.target.value as 'All' | AssetPipelineType)}
               >
-                <option>All</option>
+                <option value="All">{t('assetLibrary.allKinds')}</option>
                 {assetPipelineTypes.map((type) => (
-                  <option key={type}>{type}</option>
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
                 ))}
               </select>
               <Input
                 aria-label="Asset tag"
                 value={tag}
                 onChange={(event) => setTag(event.target.value)}
-                placeholder="Tag"
+                placeholder={t('assetLibrary.tagPlaceholder')}
               />
               <select
                 aria-label="Asset provider"
@@ -1869,7 +2325,7 @@ function AssetLibrary() {
                 value={provider}
                 onChange={(event) => setProvider(event.target.value)}
               >
-                <option value="">Provider</option>
+                <option value="">{t('assetLibrary.providerPlaceholder')}</option>
                 <option>mock-video</option>
                 <option>mock-indexer</option>
                 <option>mock-import</option>
@@ -1880,7 +2336,7 @@ function AssetLibrary() {
                 value={workflow}
                 onChange={(event) => setWorkflow(event.target.value)}
               >
-                <option value="">Workflow</option>
+                <option value="">{t('assetLibrary.workflowPlaceholder')}</option>
                 <option>idea</option>
                 <option>scene</option>
                 <option>quality-review</option>
@@ -1891,7 +2347,7 @@ function AssetLibrary() {
                 value={version}
                 onChange={(event) => setVersion(event.target.value)}
               >
-                <option value="">Version</option>
+                <option value="">{t('assetLibrary.versionPlaceholder')}</option>
                 <option value="1">v1</option>
                 <option value="2">v2</option>
                 <option value="3">v3</option>
@@ -1916,8 +2372,8 @@ function AssetLibrary() {
             {visible.length === 0 ? (
               <EmptyState
                 icon={<Boxes className="size-5" />}
-                title="No matching assets"
-                description="Change the search or filter to see other media."
+                title={t('assetLibrary.noAssetsTitle')}
+                description={t('assetLibrary.noAssetsDesc')}
               />
             ) : view === 'grid' ? (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -1978,8 +2434,8 @@ function AssetLibrary() {
             ) : (
               <EmptyState
                 icon={<ImageIcon className="size-5" />}
-                title="Select an asset"
-                description="Asset metadata appears here."
+                title={t('assetLibrary.selectAssetTitle')}
+                description={t('assetLibrary.selectAssetDesc')}
               />
             )}
           </Card>
@@ -2040,17 +2496,28 @@ function AssetIcon({ kind, className }: { kind: AssetKind; className?: string })
 }
 
 function JobCenter() {
+  const { t } = useTranslation();
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
   const allJobs = useStudioStore((state) => state.jobs);
   const jobs = allJobs.filter((job) => job.workspaceId === workspaceId);
   const retryJob = useStudioStore((state) => state.retryJob);
   const [status, setStatus] = useState<'All' | JobStatus>('All');
   const visible = status === 'All' ? jobs : jobs.filter((job) => job.status === status);
+  const statusLabels: Record<string, string> = {
+    All: t('jobCenter.all', 'Tất cả'),
+    Queued: t('common.queued', 'Trong hàng đợi'),
+    Running: t('common.running', 'Đang chạy'),
+    Success: t('common.success', 'Thành công'),
+    Failed: t('common.failed', 'Thất bại'),
+  };
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Job Center"
-        description="Queue and execution status for long-running studio operations."
+        title={t('nav.jobs', 'Trung tâm công việc')}
+        description={t(
+          'jobCenter.description',
+          'Trạng thái hàng đợi và thực thi các tác vụ studio kéo dài.',
+        )}
       />
       <div className="mb-4 flex flex-wrap gap-2">
         {(['All', 'Queued', 'Running', 'Success', 'Failed'] as const).map((item) => (
@@ -2064,14 +2531,23 @@ function JobCenter() {
                 : 'border-border bg-card text-muted-foreground hover:text-foreground',
             )}
           >
-            {item}
+            {statusLabels[item] ?? item}
             <span className="ml-2 font-mono text-xs">
               {item === 'All' ? jobs.length : jobs.filter((job) => job.status === item).length}
             </span>
           </button>
         ))}
       </div>
-      <DataTable columns={['Job', 'Subject', 'Status', 'Progress', 'Created', '']}>
+      <DataTable
+        columns={[
+          t('jobCenter.colJob', 'Công việc'),
+          t('jobCenter.colSubject', 'Đối tượng'),
+          t('common.status', 'Trạng thái'),
+          t('admin.jobs.progress', 'Tiến độ'),
+          t('jobCenter.colCreated', 'Ngày tạo'),
+          '',
+        ]}
+      >
         {visible.map((job) => (
           <tr key={job.id}>
             <td className="px-4 py-4">
@@ -2099,7 +2575,7 @@ function JobCenter() {
               {job.status === 'Failed' && (
                 <Button size="sm" variant="outline" onClick={() => retryJob(job.id)}>
                   <RefreshCw className="mr-2 size-3.5" />
-                  Retry
+                  {t('common.retry', 'Thử lại')}
                 </Button>
               )}
             </td>
@@ -2111,21 +2587,140 @@ function JobCenter() {
 }
 
 function RenderCenter() {
+  const { t } = useTranslation();
   const workspaceId = useStudioStore((state) => state.currentWorkspaceId);
-  const allRenders = useStudioStore((state) => state.renders);
-  const renders = allRenders.filter((render) => render.workspaceId === workspaceId);
+  const allProjects = useStudioStore((state) => state.projects);
+  const projects = useMemo(
+    () =>
+      allProjects.filter(
+        (project) => project.workspaceId === workspaceId && project.status !== 'Archived',
+      ),
+    [allProjects, workspaceId],
+  );
+  const notify = useStudioStore((state) => state.notify);
   const [tab, setTab] = useState<'Queue' | 'History' | 'Exports'>('Queue');
+  const [exports, setExports] = useState<ApiSchema<'ExportSummaryDto'>[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [actionId, setActionId] = useState<string | null>(null);
+
+  const loadExports = useCallback(async () => {
+    if (projects.length === 0) {
+      setExports([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    try {
+      const responses = await Promise.all(
+        projects.map((project) => ExportApi.list(project.id, { page: 1, pageSize: 100 })),
+      );
+      setExports(
+        responses
+          .flatMap((response) => response.data?.items ?? [])
+          .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? '')),
+      );
+      setError(null);
+    } catch (loadError) {
+      setError(getApiError(loadError).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [projects]);
+
+  useEffect(() => {
+    void loadExports();
+  }, [loadExports]);
+
+  const hasActiveExport = exports.some((item) => item.status !== undefined && item.status <= 3);
+  useEffect(() => {
+    if (!hasActiveExport) return;
+    const interval = window.setInterval(() => void loadExports(), 10_000);
+    return () => window.clearInterval(interval);
+  }, [hasActiveExport, loadExports]);
+
+  const runExportAction = async (id: string, action: 'cancel' | 'retry') => {
+    setActionId(id);
+    try {
+      if (action === 'cancel') await ExportApi.cancel(id);
+      else await ExportApi.retry(id);
+      notify(
+        action === 'cancel'
+          ? t('renderCenter.cancelled', 'Đã hủy tác vụ xuất video.')
+          : t('renderCenter.retried', 'Đã đưa tác vụ trở lại hàng đợi.'),
+      );
+      await loadExports();
+    } catch (actionError) {
+      notify(
+        t('renderCenter.actionFailed', 'Không thể cập nhật tác vụ: {{message}}', {
+          message: getApiError(actionError).message,
+        }),
+      );
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const downloadExport = async (id: string) => {
+    setActionId(id);
+    try {
+      const response = await ExportApi.download(id);
+      const disposition = String(response.headers['content-disposition'] ?? '');
+      const encodedName = disposition.match(/filename\*=UTF-8''([^;]+)/i)?.[1];
+      const plainName = disposition.match(/filename="?([^";]+)"?/i)?.[1];
+      const fallbackExtension = String(response.headers['content-type'] ?? '').includes('application/json')
+        ? 'json'
+        : 'mp4';
+      const fileName = encodedName
+        ? decodeURIComponent(encodedName)
+        : (plainName ?? `export-${id}.${fallbackExtension}`);
+      const url = URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (downloadError) {
+      notify(
+        t('renderCenter.downloadFailed', 'Không thể tải tệp xuất: {{message}}', {
+          message: getApiError(downloadError).message,
+        }),
+      );
+    } finally {
+      setActionId(null);
+    }
+  };
+
+  const tabLabels: Record<string, string> = {
+    Queue: t('renderCenter.tabQueue', 'Hàng đợi'),
+    History: t('renderCenter.tabHistory', 'Lịch sử'),
+    Exports: t('renderCenter.tabExports', 'Xuất file'),
+  };
   const visible =
     tab === 'Queue'
-      ? renders.filter((render) => render.status === 'Queued' || render.status === 'Running')
+      ? exports.filter((item) => item.status !== undefined && item.status <= 3)
       : tab === 'History'
-        ? renders.filter((render) => render.status === 'Success' || render.status === 'Failed')
-        : renders.filter((render) => render.status === 'Success');
+        ? exports.filter((item) => item.status !== undefined && item.status >= 4)
+        : exports.filter((item) => item.status === 4);
+  const statusLabels = [
+    t('renderCenter.status.pending', 'Đang chờ'),
+    t('renderCenter.status.preparing', 'Đang chuẩn bị'),
+    t('renderCenter.status.rendering', 'Đang dựng'),
+    t('renderCenter.status.muxing', 'Đang đóng gói'),
+    t('renderCenter.status.completed', 'Hoàn thành'),
+    t('renderCenter.status.failed', 'Thất bại'),
+    t('renderCenter.status.cancelled', 'Đã hủy'),
+  ];
   return (
     <div className="mx-auto max-w-6xl">
       <PageHeader
-        title="Render Center"
-        description="Render queue, completed history and export-ready artifacts."
+        title={t('nav.renders', 'Trung tâm xuất video')}
+        description={t(
+          'renderCenter.description',
+          'Hàng đợi xuất video, lịch sử hoàn thành và các tệp sẵn sàng xuất.',
+        )}
       />
       <div className="mb-5 flex border-b border-border">
         {(['Queue', 'History', 'Exports'] as const).map((item) => (
@@ -2139,48 +2734,90 @@ function RenderCenter() {
                 : 'border-transparent text-muted-foreground',
             )}
           >
-            {item}
+            {tabLabels[item] ?? item}
           </button>
         ))}
       </div>
-      {visible.length ? (
+      {loading ? (
+        <LoadingState label={t('renderCenter.loading', 'Đang tải hàng đợi xuất video...')} />
+      ) : error ? (
+        <EmptyState
+          icon={<Film className="size-5" />}
+          title={t('renderCenter.loadFailed', 'Không tải được hàng đợi')}
+          description={error}
+          action={
+            <Button variant="outline" onClick={() => void loadExports()}>
+              <RefreshCw className="mr-2 size-4" />
+              {t('common.retry', 'Thử lại')}
+            </Button>
+          }
+        />
+      ) : visible.length ? (
         <div className="space-y-3">
-          {visible.map((render) => (
-            <Card key={render.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center">
-              <div className="grid size-11 place-items-center rounded-lg bg-muted">
-                <Film className="size-5 text-muted-foreground" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <h2 className="font-semibold">{render.projectName}</h2>
-                  <StatusLabel status={render.status} />
+          {visible.map((item) => {
+            const project = projects.find((candidate) => candidate.id === item.projectId);
+            const isActive = item.status !== undefined && item.status <= 3;
+            const downloadable = item.status === 4 && Boolean(item.outputPath) && Boolean(item.id);
+            return (
+              <Card key={item.id} className="flex flex-col gap-4 p-5 md:flex-row md:items-center">
+                <div className="grid size-11 place-items-center rounded-lg bg-muted">
+                  <Film className="size-5 text-muted-foreground" />
                 </div>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {render.preset} / Snapshot pinned
-                </p>
-                {render.status === 'Running' && (
-                  <Progress value={render.progress} className="mt-3 max-w-md" />
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {tab === 'Exports' && (
-                  <Button variant="outline">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="font-semibold">{project?.name ?? item.projectId}</h2>
+                    <span className="rounded-md border border-border bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                      {statusLabels[item.status ?? 0]}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {item.resolution ?? 'MP4'} / {item.progress ?? 0}%
+                  </p>
+                  {isActive && <Progress value={item.progress ?? 0} className="mt-3 max-w-md" />}
+                </div>
+                <div className="flex items-center gap-2">
+                  {downloadable && (
+                  <Button
+                    variant="outline"
+                    loading={actionId === item.id}
+                    onClick={() => void downloadExport(item.id!)}
+                  >
                     <Download className="mr-2 size-4" />
-                    Export list
+                    {t('renderCenter.download', 'Tải tệp xuất')}
                   </Button>
-                )}
-                <Button size="icon" variant="ghost" aria-label="Render actions">
-                  <MoreHorizontal className="size-4" />
-                </Button>
-              </div>
-            </Card>
-          ))}
+                  )}
+                  {isActive && item.id && (
+                    <Button
+                      variant="outline"
+                      loading={actionId === item.id}
+                      onClick={() => void runExportAction(item.id!, 'cancel')}
+                    >
+                      {t('common.cancel', 'Hủy')}
+                    </Button>
+                  )}
+                  {item.status === 5 && item.id && (
+                    <Button
+                      variant="outline"
+                      loading={actionId === item.id}
+                      onClick={() => void runExportAction(item.id!, 'retry')}
+                    >
+                      <RefreshCw className="mr-2 size-4" />
+                      {t('common.retry', 'Thử lại')}
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       ) : (
         <EmptyState
           icon={<Film className="size-5" />}
-          title={`No ${tab.toLowerCase()} items`}
-          description="Render records will appear here when the corresponding mock operation exists."
+          title={t('renderCenter.emptyTitle', 'Không có mục nào')}
+          description={t(
+            'renderCenter.emptyDesc',
+            'Bản ghi xuất video sẽ xuất hiện ở đây khi có tác vụ tương ứng.',
+          )}
         />
       )}
     </div>

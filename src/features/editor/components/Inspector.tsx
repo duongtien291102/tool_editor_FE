@@ -2,12 +2,22 @@ import { ChevronDown, PanelRight } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useProductionFlowStore } from '@/features/workflow';
+import { getApiError } from '@/api/httpClient';
 import { type ProjectRecord, useStudioStore } from '@/state/studioStore';
-import { EMPTY_PRODUCTION_SCENES, buildTimelineFromScenes, formatTime } from '../utils/editorUtils';
+import {
+  EMPTY_PRODUCTION_SCENES,
+  buildTimelineFromScenes,
+  getMinimumSceneDuration,
+  roundSceneDuration,
+  formatTime,
+} from '../utils/editorUtils';
 
 export function Inspector({ project }: { project: ProjectRecord }) {
   const { t } = useTranslation('editor');
+  const notify = useStudioStore((state) => state.notify);
   const selectedClipId = useStudioStore((state) => state.editor.selectedClipId);
+  const updateSceneTiming = useProductionFlowStore((state) => state.updateSceneTiming);
+  const persistSceneTiming = useProductionFlowStore((state) => state.persistSceneTiming);
   const scenes = useProductionFlowStore(
     (state) => state.projects[project.id]?.scenes ?? EMPTY_PRODUCTION_SCENES,
   );
@@ -15,6 +25,8 @@ export function Inspector({ project }: { project: ProjectRecord }) {
   const selectedClip = timeline.rows
     .flatMap((row) => row.clips)
     .find((clip) => clip.id === selectedClipId);
+  const selectedScene = scenes.find((scene) => scene.id === selectedClip?.sceneId);
+  const minimumSceneDuration = selectedScene ? getMinimumSceneDuration(selectedScene) : 1;
 
   return (
     <aside className="hidden min-h-0 overflow-auto border-l border-white/8 bg-[#111517] p-4 2xl:block">
@@ -38,10 +50,34 @@ export function Inspector({ project }: { project: ProjectRecord }) {
               label={t('inspector.position')}
               value={formatTime(selectedClip.startSeconds)}
             />
-            <InspectorField
-              label={t('inspector.duration')}
-              value={formatTime(selectedClip.durationSeconds)}
-            />
+            <div>
+              <dt className="text-zinc-500">{t('inspector.duration')}</dt>
+              <dd className="mt-1 flex items-center gap-2">
+                <input
+                  type="number"
+                  min={minimumSceneDuration}
+                  max={3600}
+                  step={0.1}
+                  value={selectedClip.durationSeconds}
+                  onChange={(event) => {
+                    if (!selectedScene) return;
+                    const parsed = Number(event.target.value);
+                    if (!Number.isFinite(parsed)) return;
+                    updateSceneTiming(project.id, selectedScene.id, {
+                      durationSeconds: roundSceneDuration(Math.max(minimumSceneDuration, parsed)),
+                    });
+                  }}
+                  onBlur={() => {
+                    if (!selectedScene) return;
+                    void persistSceneTiming(project.id, selectedScene.id).catch((error: unknown) =>
+                      notify(`Không lưu được thời lượng cảnh: ${getApiError(error).message}`),
+                    );
+                  }}
+                  className="h-8 w-full rounded-md border border-white/10 bg-black/20 px-2 font-mono text-xs text-zinc-200 outline-none focus:border-primary"
+                />
+                <span className="text-[10px] text-zinc-500">giây</span>
+              </dd>
+            </div>
             <InspectorField
               label={t('inspector.content')}
               value={selectedClip.content || t('inspector.noContent')}

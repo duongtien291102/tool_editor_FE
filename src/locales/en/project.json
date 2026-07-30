@@ -1,0 +1,34 @@
+{
+  "title": "Projects",
+  "newProject": "New project",
+  "renameProject": "Rename project",
+  "deleteProject": "Delete project",
+  "editProject": "Edit project",
+  "openEditor": "Open editor",
+  "create": {
+    "title": "Create project",
+    "description": "Create the project identity and default editorial format.",
+    "projectName": "Project name",
+    "projectDescription": "Project description",
+    "editorialFormat": "Editorial format",
+    "createBtn": "Create project",
+    "cancelBtn": "Cancel"
+  },
+  "overview": {
+    "editorialFormat": "Editorial format",
+    "assets": "Assets",
+    "linkedAssets": "{{count}} linked",
+    "operations": "Operations",
+    "runningOperations": "{{count}} running",
+    "projectStructure": "Project structure",
+    "projectStructureDesc": "The production objects prepared for editing.",
+    "lifecycle": "Lifecycle",
+    "updated": "Updated",
+    "version": "Version",
+    "archiveProject": "Archive project",
+    "editDesc": "Update project metadata without changing timeline data.",
+    "name": "Name",
+    "description": "Description",
+    "saveProject": "Save project"
+  }
+}

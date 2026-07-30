@@ -9,4 +9,5 @@ export { RenderApi } from './RenderApi';
 export { ExportApi } from './ExportApi';
 export { WorkflowApi } from './WorkflowApi';
 export { OperationsApi } from './OperationsApi';
+export { storageClient } from './storageClient';
 export type { ApiSchemas, ApiSchema, QueryParams, UploadProgress } from './types';

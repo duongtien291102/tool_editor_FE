@@ -1,0 +1,34 @@
+{
+  "title": "Dự án",
+  "newProject": "Dự án mới",
+  "renameProject": "Đổi tên dự án",
+  "deleteProject": "Xóa dự án",
+  "editProject": "Chỉnh sửa dự án",
+  "openEditor": "Mở trình chỉnh sửa",
+  "create": {
+    "title": "Tạo dự án",
+    "description": "Tạo danh tính dự án và định dạng biên tập mặc định.",
+    "projectName": "Tên dự án",
+    "projectDescription": "Mô tả dự án",
+    "editorialFormat": "Định dạng biên tập",
+    "createBtn": "Tạo dự án",
+    "cancelBtn": "Hủy"
+  },
+  "overview": {
+    "editorialFormat": "Định dạng biên tập",
+    "assets": "Tài sản",
+    "linkedAssets": "{{count}} được liên kết",
+    "operations": "Hoạt động",
+    "runningOperations": "{{count}} đang chạy",
+    "projectStructure": "Cấu trúc dự án",
+    "projectStructureDesc": "Các đối tượng sản xuất được chuẩn bị để chỉnh sửa.",
+    "lifecycle": "Vòng đời",
+    "updated": "Cập nhật",
+    "version": "Phiên bản",
+    "archiveProject": "Lưu trữ dự án",
+    "editDesc": "Cập nhật siêu dữ liệu dự án mà không thay đổi dữ liệu dòng thời gian.",
+    "name": "Tên",
+    "description": "Mô tả",
+    "saveProject": "Lưu dự án"
+  }
+}

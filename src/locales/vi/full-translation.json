@@ -1,0 +1,69 @@
+{
+  "workspaces": {
+    "title": "Không gian làm việc",
+    "description": "Ranh giới thuê bao cho dự án, thành viên, tài sản và sử dụng.",
+    "newWorkspace": "Không gian làm việc mới",
+    "currentWorkspace": "Không gian làm việc hiện tại",
+    "tenantBoundaries": "Ranh giới thuê bao",
+    "members": "Thành viên",
+    "usage": "Sử dụng"
+  },
+  "assets": {
+    "title": "Thư viện tài sản",
+    "description": "Danh mục phương tiện không gian làm việc với tham chiếu tài sản không thay đổi.",
+    "uploadAsset": "Tải lên tài sản",
+    "searchAssets": "Tìm kiếm tài sản",
+    "allAssets": "Tất cả tài sản",
+    "noMatchingAssets": "Không có tài sản nào phù hợp",
+    "selectAnAsset": "Chọn một tài sản",
+    "assetMetadata": "Siêu dữ liệu tài sản xuất hiện ở đây",
+    "uploads": "Tải lên",
+    "images": "Hình ảnh",
+    "videos": "Video",
+    "pexels": "Pexels",
+    "tag": "Thẻ",
+    "provider": "Nhà cung cấp",
+    "workflow": "Quy trình",
+    "version": "Phiên bản",
+    "folders": "Thư mục",
+    "workspaceCreated": "Không gian làm việc được tạo"
+  },
+  "jobs": {
+    "title": "Trung tâm công việc",
+    "description": "Giám sát công việc hoạt động, luồng công nhân và thông lượng hàng đợi.",
+    "jobCenter": "Trung tâm công việc",
+    "openJobCenter": "Mở Trung tâm công việc"
+  },
+  "dashboard": {
+    "production": "Tổng quan sản xuất",
+    "projectsMediaOperations": "Dự án, hoạt động phương tiện và hoạt động đầu ra trong không gian làm việc hiện tại.",
+    "activeProjects": "Dự án hoạt động",
+    "currentWorkspace": "Không gian làm việc hiện tại",
+    "jobsInProgress": "Công việc đang tiến hành",
+    "needAttention": "cần chú ý",
+    "assetsAvailable": "Tài sản có sẵn",
+    "originalsAndMedia": "Tài nguyên gốc và phương tiện",
+    "completedRenders": "Xuất video hoàn thành",
+    "readyForExport": "Sẵn sàng xuất",
+    "recentProjects": "Dự án gần đây",
+    "active": "hoạt động",
+    "activity": "Hoạt động",
+    "noProjectsYet": "Chưa có dự án nào",
+    "createFirstProject": "Tạo dự án đầu tiên trong không gian làm việc này."
+  },
+  "buttons": {
+    "createNewProject": "Tạo dự án mới",
+    "createProject": "Tạo dự án",
+    "uploadAsset": "Tải lên tài sản",
+    "newWorkspace": "Không gian làm việc mới",
+    "mediaAssetLibrary": "📦 Thư viện tài sản phương tiện"
+  },
+  "project": {
+    "createProject": "Tạo dự án",
+    "createNewProject": "Tạo dự án mới"
+  },
+  "mediaAssets": {
+    "browsePreviewUpload": "Duyệt, xem trước và tải lên tài sản phương tiện",
+    "workspaceCatalog": "Danh mục phương tiện không gian làm việc"
+  }
+}

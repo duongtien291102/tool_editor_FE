@@ -1,0 +1,101 @@
+﻿File,Feature,Component,Hardcoded String,Type,Language,Priority,Suggested i18n Key
+src/features/auth/LoginPage.tsx,Auth,Login,Sáng tạo đỉnh cao hệ thống bền vững,Hero tagline,VI,P1,auth.hero.tagline
+src/features/auth/LoginPage.tsx,Auth,Login,Xây dựng kịch bản. Định hình từng bản dựng.,Hero title,VI,P1,auth.hero.title
+src/features/auth/LoginPage.tsx,Auth,Login,Nền tảng studio ổn định cho dự án kho tài nguyên,Hero description,VI,P1,auth.hero.description
+src/features/auth/LoginPage.tsx,Auth,Login,Môi trường sản xuất AI Video Studio,Footer,VI,P1,auth.footer.environment
+src/features/auth/LoginPage.tsx,Auth,Login,Đăng nhập,Button,VI,P1,auth.login.button
+src/features/auth/LoginPage.tsx,Auth,Login,Đăng ký tài khoản,Tab button,VI,P1,auth.register.tab
+src/features/auth/LoginPage.tsx,Auth,Login,Đăng nhập vào AI Studio,Form title,VI,P1,auth.login.title
+src/features/auth/LoginPage.tsx,Auth,Login,Nhập thông tin tài khoản để truy cập không gian làm việc,Form subtitle,VI,P1,auth.login.subtitle
+src/features/auth/LoginPage.tsx,Auth,Login,Tên đăng nhập / Username,Label,VI,P1,auth.login.usernameLabel
+src/features/auth/LoginPage.tsx,Auth,Login,Nhập tên đăng nhập,Placeholder,VI,P1,auth.login.usernamePlaceholder
+src/features/auth/LoginPage.tsx,Auth,Login,Mật khẩu,Label,VI,P1,auth.login.passwordLabel
+src/features/auth/LoginPage.tsx,Auth,Login,••••••••,Placeholder,VI,P1,auth.login.passwordPlaceholder
+src/features/auth/LoginPage.tsx,Auth,Login,Đăng ký tài khoản mới,Register title,VI,P1,auth.register.title
+src/features/auth/LoginPage.tsx,Auth,Login,Mọi tài khoản tạo mới sẽ mặc định có quyền người dùng,Register subtitle,VI,P1,auth.register.subtitle
+src/features/auth/LoginPage.tsx,Auth,Login,🎉 Đã tạo tài khoản người dùng thành công!,Success message,VI,P1,auth.register.successMessage
+src/features/auth/LoginPage.tsx,Auth,Login,Chuyển sang Đăng nhập,Switch button,VI,P1,auth.register.switchButton
+src/features/auth/LoginPage.tsx,Auth,Login,Họ và tên,Label,VI,P1,auth.register.fullNameLabel
+src/features/auth/LoginPage.tsx,Auth,Login,Nguyễn Văn A,Placeholder,VI,P1,auth.register.fullNamePlaceholder
+src/features/auth/LoginPage.tsx,Auth,Login,Email,Label,EN,P1,common.fields.email
+src/features/auth/LoginPage.tsx,Auth,Login,user@example.com,Placeholder,EN,P1,auth.register.emailPlaceholder
+src/features/auth/LoginPage.tsx,Auth,Login,Ít nhất 6 ký tự,Hint,VI,P1,auth.register.passwordHint
+src/features/auth/LoginPage.tsx,Auth,Login,Tạo tài khoản User,Button,VI,P1,auth.register.createButton
+src/features/auth/LoginPage.tsx,Auth,Login,AI Studio,Brand,EN,P1,common.brand.appName
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,AI Video Studio Dashboard,Title,EN,P1,dashboard.title
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Manage your AI generation workflows,Subtitle,EN,P1,dashboard.subtitle
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Explore Projects,Button,EN,P1,dashboard.buttons.exploreProjects
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,AI Generation Engine,Button,EN,P1,dashboard.buttons.aiGenerationEngine
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Active Projects,KPI label,EN,P1,dashboard.kpi.activeProjects.label
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,6 updated today,KPI subtext,EN,P1,dashboard.kpi.activeProjects.updated
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,AI Render Jobs,KPI label,EN,P1,dashboard.kpi.renderJobs.label
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Active,Status,EN,P1,common.status.active
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,98.4% success rate,Subtext,EN,P1,dashboard.kpi.renderJobs.successRate
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Video Exports,KPI label,EN,P1,dashboard.kpi.videoExports.label
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,4K NVENC,Metric,EN,P1,dashboard.kpi.videoExports.codec
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Total 14.2 GB encoded,Subtext,EN,P1,dashboard.kpi.videoExports.encoded
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,AI Providers,KPI label,EN,P1,dashboard.kpi.aiProviders.label
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Connected,Status,EN,P1,common.status.connected
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Recent Projects,Section,EN,P1,dashboard.sections.recentProjects
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,View all,Link,EN,P1,common.links.viewAll
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Completed,Status,EN,P1,common.status.completed
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Rendering,Status,EN,P1,common.status.rendering
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Draft,Status,EN,P1,common.status.draft
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Aspect Ratio: {ratio} • Updated {time},Format,EN,P1,dashboard.formats.projectInfo
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,+ Create New Project,Button,EN,P1,dashboard.buttons.createNewProject
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,🎬 Launch AI Generation Studio,Button,EN,P1,dashboard.buttons.launchGenerationStudio
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,📦 Video Export Manager,Button,EN,P1,dashboard.buttons.videoExportManager
+src/features/project-explorer/components/DashboardPage.tsx,Project-Explorer,Dashboard,Quick Actions,Section,EN,P1,dashboard.sections.quickActions
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Projects Studio,Title,EN,P1,projectList.title
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Manage your AI video production projects,Subtitle,EN,P1,projectList.subtitle
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,+ Create New Project,Button,EN,P1,projectList.buttons.createNew
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Search projects...,Placeholder,EN,P1,projectList.search.placeholder
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,ALL,Filter,EN,P1,projectList.filters.all
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,DRAFT,Filter,EN,P1,projectList.filters.draft
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,RENDERING,Filter,EN,P1,projectList.filters.rendering
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,COMPLETED,Filter,EN,P1,projectList.filters.completed
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Shots: {count},Label,EN,P1,projectList.card.shots
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Updated {date},Label,EN,P1,projectList.card.updated
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Create New Project,Modal title,EN,P1,projectList.modal.title
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Project Name,Label,EN,P1,projectList.modal.projectNameLabel
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,My AI Video Project,Placeholder,EN,P1,projectList.modal.projectNamePlaceholder
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Aspect Ratio,Label,EN,P1,projectList.modal.aspectRatioLabel
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,16:9 Landscape (YouTube TV),Option,EN,P1,projectList.modal.aspectRatio.landscape
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,9:16 Portrait (TikTok Shorts Reels),Option,EN,P1,projectList.modal.aspectRatio.portrait
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,1:1 Square (Instagram),Option,EN,P1,projectList.modal.aspectRatio.square
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,21:9 Ultrawide Cinematic,Option,EN,P1,projectList.modal.aspectRatio.ultrawide
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Cancel,Button,EN,P1,common.buttons.cancel
+src/features/project-explorer/components/ProjectListPage.tsx,Project-Explorer,ProjectList,Create Project,Button,EN,P1,projectList.buttons.createProject
+src/features/commercial/components/CommercialScreen.tsx,Commercial,Hub,Commercial Hub,Title,EN,P1,commercial.hub.title
+src/features/commercial/components/CommercialScreen.tsx,Commercial,Hub,Manage Profile Subscriptions Credits Usage & Invoices,Subtitle,EN,P1,commercial.hub.subtitle
+src/features/commercial/components/CommercialScreen.tsx,Commercial,Hub,Credits:,Label,EN,P1,commercial.labels.credits
+src/features/commercial/components/CommercialScreen.tsx,Commercial,Hub,+ Buy Credits,Button,EN,P1,commercial.buttons.buyCredits
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Credit Wallet,Title,EN,P1,commercial.credits.walletTitle
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Credits,Unit,EN,P1,common.units.credits
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Purchased:,Label,EN,P1,commercial.credits.purchased
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Used:,Label,EN,P1,commercial.credits.used
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Credit Top-Up Packages,Section,EN,P1,commercial.credits.topupPackages
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Most Popular,Badge,EN,P1,commercial.credits.mostPopular
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,one-time,Label,EN,P1,commercial.credits.oneTime
+src/features/commercial/components/CreditsTab.tsx,Commercial,Credits,Buy Now (),Button,EN,P1,commercial.credits.buyNow
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Choose Your SaaS Plan,Title,EN,P1,commercial.pricing.title
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Policy-enforced subscription tiers,Subtitle,EN,P1,commercial.pricing.subtitle
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Current Plan,Badge,EN,P1,commercial.pricing.currentPlan
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,/month,Unit,EN,P1,commercial.pricing.perMonth
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Monthly Credits:,Label,EN,P1,commercial.pricing.monthlyCredits
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Export Limit:,Label,EN,P1,commercial.pricing.exportLimit
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,/ mo,Unit,EN,P1,commercial.pricing.perMonth
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Concurrent Jobs,Feature,EN,P1,commercial.pricing.concurrentJobs
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Queue limit:,Label,EN,P1,commercial.pricing.queueLimit
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Studio Customization Mode,Feature,EN,P1,commercial.pricing.studioCustomization
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Advanced AI Workflows,Feature,EN,P1,commercial.pricing.advancedWorkflows
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Active Plan,Button,EN,P1,commercial.pricing.activePlan
+src/features/commercial/components/PricingTab.tsx,Commercial,Pricing,Upgrade to {name},Button,EN,P1,commercial.pricing.upgradeTo
+src/features/admin/components/AdminConsoleScreen.tsx,Admin,Console,Production Admin Console,Title,EN,P2,admin.console.title
+src/features/admin/components/AdminConsoleScreen.tsx,Admin,Console,Operational observability system health,Subtitle,EN,P2,admin.console.subtitle
+src/features/admin/components/AdminConsoleScreen.tsx,Admin,Console,🔄 Refresh System Status,Button,EN,P2,admin.buttons.refreshStatus
+src/features/generation/components/GenerationScreen.tsx,Generation,Wizard,Video Generation Experience,Title,EN,P2,generation.title
+src/features/generation/components/GenerationScreen.tsx,Generation,Wizard,End-to-end video pipeline wizard,Subtitle,EN,P2,generation.subtitle
+src/features/generation/components/GenerationScreen.tsx,Generation,Wizard,✨ New Generation Wizard,Tab,EN,P2,generation.tabs.wizard
+src/features/generation/components/GenerationScreen.tsx,Generation,Wizard,📜 Generation History ({count}),Tab,EN,P2,generation.tabs.history
+src/features/workspace/components/WorkspaceHeader.tsx,Workspace,Header,Chuyển đổi ngôn ngữ / Switch language,Tooltip,VI/EN,P2,workspace.header.languageSwitcher

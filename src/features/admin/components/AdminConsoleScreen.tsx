@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { adminService } from '../services/adminService';
 import type { AdminUserSummary, AuditLogEntry, FeatureFlag, SystemHealthReport, SystemMetrics } from '../types';
 import { MetricsDashboardTab } from './MetricsDashboardTab';
@@ -16,6 +17,7 @@ interface AdminConsoleScreenProps {
 }
 
 export const AdminConsoleScreen: React.FC<AdminConsoleScreenProps> = ({ defaultTab = 'metrics' }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<AdminTab>(defaultTab);
 
   const [metrics, setMetrics] = useState<SystemMetrics | null>(null);
@@ -50,28 +52,28 @@ export const AdminConsoleScreen: React.FC<AdminConsoleScreenProps> = ({ defaultT
   };
 
   const tabs: { key: AdminTab; label: string }[] = [
-    { key: 'metrics', label: '📊 Metrics' },
-    { key: 'health', label: '💚 Health' },
-    { key: 'audit', label: '📜 Audit Logs' },
-    { key: 'flags', label: '🚩 Feature Flags' },
-    { key: 'users', label: '👥 Users & Credits' },
-    { key: 'jobs', label: '⚙️ Jobs & Queue' },
-    { key: 'export', label: '💾 Backup & Export' }
+    { key: 'metrics', label: t('admin.tabs.metrics', '📊 Chỉ số') },
+    { key: 'health', label: t('admin.tabs.health', '💚 Sức khỏe') },
+    { key: 'audit', label: t('admin.tabs.audit', '📜 Nhật ký Kiểm toán') },
+    { key: 'flags', label: t('admin.tabs.flags', '🚩 Cờ Tính năng') },
+    { key: 'users', label: t('admin.tabs.users', '👥 Người dùng & Tín chỉ') },
+    { key: 'jobs', label: t('admin.tabs.jobs', '⚙️ Công việc & Hàng đợi') },
+    { key: 'export', label: t('admin.tabs.export', '💾 Sao lưu & Xuất') }
   ];
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Production Admin Console</h1>
-          <p className="text-slate-400 text-sm mt-1">Operational observability, system health, audit logging, and runtime feature controls</p>
+          <h1 className="text-3xl font-extrabold text-white">{t('admin.title', 'Bảng điều khiển Quản trị Sản xuất')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('admin.subtitle', 'Khả năng quan sát hoạt động, sức khỏe hệ thống, nhật ký kiểm toán và kiểm soát tính năng thời gian chạy')}</p>
         </div>
 
         <button
           onClick={loadData}
           className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg"
         >
-          🔄 Refresh System Status
+          {t('admin.refreshStatus', '🔄 Làm mới Trạng thái Hệ thống')}
         </button>
       </div>
 

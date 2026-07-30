@@ -1,0 +1,69 @@
+{
+  "workspaces": {
+    "title": "Workspaces",
+    "description": "Tenant boundaries for projects, members, assets and usage.",
+    "newWorkspace": "New workspace",
+    "currentWorkspace": "Current workspace",
+    "tenantBoundaries": "Tenant boundaries",
+    "members": "Members",
+    "usage": "Usage"
+  },
+  "assets": {
+    "title": "Asset Library",
+    "description": "Workspace media catalog with immutable asset references.",
+    "uploadAsset": "Upload asset",
+    "searchAssets": "Search assets",
+    "allAssets": "All assets",
+    "noMatchingAssets": "No matching assets",
+    "selectAnAsset": "Select an asset",
+    "assetMetadata": "Asset metadata appears here.",
+    "uploads": "Uploads",
+    "images": "Images",
+    "videos": "Videos",
+    "pexels": "Pexels",
+    "tag": "Tag",
+    "provider": "Provider",
+    "workflow": "Workflow",
+    "version": "Version",
+    "folders": "Folders",
+    "workspaceCreated": "Workspace created"
+  },
+  "jobs": {
+    "title": "Job Center",
+    "description": "Monitor active render jobs, worker threads, and queue throughput.",
+    "jobCenter": "Job Center",
+    "openJobCenter": "Open Job Center"
+  },
+  "dashboard": {
+    "production": "Production overview",
+    "projectsMediaOperations": "Projects, media operations and output activity in the current workspace.",
+    "activeProjects": "Active projects",
+    "currentWorkspace": "Current workspace",
+    "jobsInProgress": "Jobs in progress",
+    "needAttention": "need attention",
+    "assetsAvailable": "Assets available",
+    "originalsAndMedia": "Originals and media",
+    "completedRenders": "Completed renders",
+    "readyForExport": "Ready for export",
+    "recentProjects": "Recent projects",
+    "active": "active",
+    "activity": "Activity",
+    "noProjectsYet": "No projects yet",
+    "createFirstProject": "Create the first project in this workspace."
+  },
+  "buttons": {
+    "createNewProject": "Create New Project",
+    "createProject": "Create project",
+    "uploadAsset": "Upload asset",
+    "newWorkspace": "New workspace",
+    "mediaAssetLibrary": "📦 Media Asset Library"
+  },
+  "project": {
+    "createProject": "Create project",
+    "createNewProject": "Create New Project"
+  },
+  "mediaAssets": {
+    "browsePreviewUpload": "Browse, preview, and upload media assets",
+    "workspaceCatalog": "Workspace media catalog with immutable asset references"
+  }
+}

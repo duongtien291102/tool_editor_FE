@@ -45,6 +45,16 @@ export const ShotManager: React.FC<ShotManagerProps> = ({ sceneId }) => {
 
   const [newPrompt, setNewPrompt] = useState('');
   const [selectedProvider, setSelectedProvider] = useState('Google Veo');
+  const [isVoiceModalOpen, setIsVoiceModalOpen] = useState(false);
+  const [selectedVoice, setSelectedVoice] = useState('21m00Tcm4TlvDq8ikWAM');
+  const [availableVoices] = useState([
+    { id: '21m00Tcm4TlvDq8ikWAM', name: 'Rachel', language: 'English' },
+    { id: 'EXAVITQu4vr4xnSDxMaL', name: 'Bella', language: 'English' },
+    { id: 'ThT5KcBeYPX3keUQqHPh', name: 'Antoni', language: 'English' },
+    { id: 'TxGEqnHWrfWFTfGW9XjX', name: 'Arnold', language: 'English' },
+    { id: 'VR6AewLvLurg7Z58O35l', name: 'Adam', language: 'English' },
+    { id: 'pNInz6obpgDQGcFmaJgB', name: 'Sam', language: 'English' },
+  ]);
 
   const handleAddShot = (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,6 +104,9 @@ export const ShotManager: React.FC<ShotManagerProps> = ({ sceneId }) => {
           <option value="Sora">OpenAI Sora</option>
           <option value="Pika">Pika Labs</option>
         </select>
+        <Button size="sm" type="button" variant="outline" onClick={() => setIsVoiceModalOpen(true)}>
+          🎤 Chọn Giọng
+        </Button>
         <Button size="sm" type="submit">
           + Add Shot
         </Button>
@@ -131,6 +144,46 @@ export const ShotManager: React.FC<ShotManagerProps> = ({ sceneId }) => {
           </div>
         ))}
       </div>
+
+      {/* Voice Selection Modal */}
+      {isVoiceModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-lg border border-border bg-card p-5 space-y-4">
+            <h3 className="text-base font-semibold">🎤 Chọn Giọng Nói</h3>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {availableVoices.map((voice) => (
+                <button
+                  key={voice.id}
+                  onClick={() => {
+                    setSelectedVoice(voice.id);
+                    setIsVoiceModalOpen(false);
+                  }}
+                  className={`w-full p-3 rounded-md border text-left transition-colors ${
+                    selectedVoice === voice.id
+                      ? 'border-primary bg-primary/10 text-primary'
+                      : 'border-border bg-background hover:border-primary/50'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm">{voice.name}</p>
+                      <p className="text-xs text-muted-foreground">{voice.language}</p>
+                    </div>
+                    {selectedVoice === voice.id && (
+                      <span className="text-primary font-bold">✓</span>
+                    )}
+                  </div>
+                </button>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setIsVoiceModalOpen(false)}>
+                Đóng
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

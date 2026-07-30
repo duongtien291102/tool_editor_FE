@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { commercialService } from '../services/commercialService';
 import type {
   UserProfile,
@@ -25,6 +26,7 @@ interface CommercialScreenProps {
 }
 
 export const CommercialScreen: React.FC<CommercialScreenProps> = ({ defaultTab = 'profile' }) => {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState<CommercialTab>(defaultTab);
 
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -97,18 +99,18 @@ export const CommercialScreen: React.FC<CommercialScreenProps> = ({ defaultTab =
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-6">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-4 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-white">Commercial Hub</h1>
-          <p className="text-slate-400 text-sm mt-1">Manage Profile, Subscriptions, Credits, Usage & Invoices</p>
+          <h1 className="text-3xl font-extrabold text-white">{t('commercial.title', 'Trung tâm Thương mại & SaaS')}</h1>
+          <p className="text-slate-400 text-sm mt-1">{t('commercial.description', 'Quản lý tài khoản người dùng, đăng ký gói, ví tín chỉ, lịch sử sử dụng và hóa đơn thanh toán')}</p>
         </div>
 
         <div className="flex items-center gap-3 bg-slate-900 border border-slate-800 p-2 rounded-xl">
-          <span className="text-xs text-slate-400 font-medium">Credits:</span>
+          <span className="text-xs text-slate-400 font-medium">{t('common.credits', 'Tín chỉ')}:</span>
           <span className="text-lg font-black text-indigo-400">{wallet.remainingCredits.toLocaleString()}</span>
           <button
             onClick={() => setActiveTab('credits')}
             className="px-3 py-1 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold rounded-lg shadow"
           >
-            + Buy Credits
+            + {t('commercial.profile.purchaseCredits', 'Mua Tín chỉ')}
           </button>
         </div>
       </div>
@@ -125,7 +127,7 @@ export const CommercialScreen: React.FC<CommercialScreenProps> = ({ defaultTab =
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50'
             }`}
           >
-            {tab}
+            {t(`commercial.tabs.${tab}`, tab)}
           </button>
         ))}
       </div>

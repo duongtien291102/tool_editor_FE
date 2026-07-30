@@ -27,6 +27,12 @@ class ConfigService {
     }
     return this.isDevelopment() ? 'http://localhost:8080' : 'https://tool-editor-be.onrender.com';
   }
+
+  public getGeminiApiKey(): string {
+    // Provider credentials are server-side only. Browser bundles must never read
+    // VITE_* AI keys because Vite embeds them in public JavaScript.
+    return '';
+  }
 }
 
 export const configService = new ConfigService();

@@ -108,7 +108,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = useCallback(async (email: string, password: string) => {
     setError(null);
     try {
-      const response = await AuthApi.register({ username: email, email, password });
+      const response = await AuthApi.register({ 
+        username: email, 
+        email, 
+        password,
+        deviceId: 'aivideostudio-web'
+      });
       if (!response.success) throw new Error(response.message ?? 'Registration failed.');
     } catch (err: unknown) {
       setError(getApiError(err).message);

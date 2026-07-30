@@ -4,6 +4,9 @@ import { useWorkspace } from '../hooks/useWorkspace';
 import { useCurrentProject } from '../hooks/useCurrentProject';
 import { useAuth } from '@/features/auth';
 import { settingsService } from '@/services/settings/SettingsService';
+import { useTimelineStore } from '@/features/timeline';
+import { useStudioStore } from '@/state/studioStore';
+import { persistTimelineDocumentToBackend } from '@/services/aiTimelineSyncService';
 
 export const WorkspaceHeader: React.FC = () => {
   const { t, i18n } = useTranslation('workspace');
@@ -93,9 +96,20 @@ export const WorkspaceHeader: React.FC = () => {
           {(user?.username || 'AI').slice(0, 2).toUpperCase()}
         </button>
         <div className="h-4 w-px bg-border mx-2"></div>
-        <div className="h-8 px-4 rounded bg-primary text-primary-foreground text-xs flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity font-medium shadow-sm">
+        <button
+          type="button"
+          onClick={async () => {
+            const doc = useTimelineStore.getState().document;
+            const studioState = useStudioStore.getState();
+            const projectId = studioState.currentProjectId || 'project-atlas';
+            if (doc && projectId) {
+              await persistTimelineDocumentToBackend(projectId, doc);
+            }
+          }}
+          className="h-8 px-4 rounded bg-primary text-primary-foreground text-xs flex items-center justify-center cursor-pointer hover:opacity-90 transition-opacity font-medium shadow-sm"
+        >
           {t('header.export')}
-        </div>
+        </button>
       </div>
     </header>
   );

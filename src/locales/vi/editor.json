@@ -1,0 +1,170 @@
+{
+  "navigation": { "editor": "Trình chỉnh sửa" },
+  "modes": { "timeline": "Chỉnh sửa", "script": "Kịch bản" },
+  "tools": {
+    "select": "Lựa chọn",
+    "trim": "Cắt",
+    "split": "Chia",
+    "undo": "Hoàn tác",
+    "redo": "Làm lại"
+  },
+  "status": {
+    "timelineSaved": "Nháp dòng thời gian đã lưu",
+    "scriptAutoSave": "Tự động lưu kịch bản"
+  },
+  "actions": { "render": "Xuất video" },
+  "export": {
+    "queueing": "Đang xếp hàng...",
+    "queued": "Đã thêm video vào hàng đợi xuất.",
+    "failed": "Không thể xuất video: {{message}}"
+  },
+  "panels": { "workflow": "Quy trình", "assets": "Tài nguyên", "jobs": "Công việc" },
+  "preview": {
+    "currentFrame": "Khung hình hiện tại",
+    "play": "Phát xem trước",
+    "pause": "Tạm dừng xem trước"
+  },
+  "timeline": {
+    "title": "Dòng thời gian chính",
+    "zoomOut": "Thu nhỏ",
+    "zoomIn": "Phóng to",
+    "playhead": "Con trỏ dòng thời gian",
+    "emptyTitle": "Chưa có cảnh nào",
+    "emptyDescription": "Tạo hoặc chọn một kịch bản để xây dựng dòng thời gian này.",
+    "untitledClip": "Cảnh chưa đặt tên",
+    "tracks": {
+      "sceneVisuals": "Hình ảnh cảnh",
+      "sceneNarration": "Lời tường thuật cảnh"
+    }
+  },
+  "inspector": {
+    "title": "Trình kiểm tra",
+    "selection": "Lựa chọn",
+    "noSelection": "Chưa chọn clip nào",
+    "clipType": "Loại clip",
+    "clipTypes": {
+      "visual": "Hình ảnh cảnh",
+      "voice": "Lời tường thuật"
+    },
+    "position": "Vị trí",
+    "duration": "Thời lượng",
+    "content": "Nội dung đã lưu",
+    "noContent": "Không có nội dung",
+    "projectFormat": "Định dạng dự án",
+    "transform": "Biến đổi",
+    "audio": "Âm thanh"
+  },
+  "workflow": {
+    "title": "Quy trình video",
+    "description": "Dòng thời gian được tạo từ dữ liệu quy trình xác thực.",
+    "liveDescription": "Trạng thái được đồng bộ từ kịch bản, Gemini và phiên tạo.",
+    "selectedOutput": "Đầu ra đã chọn",
+    "states": {
+      "idea": "Ý tưởng",
+      "storyboard": "Bảng điều khiển",
+      "scene": "Cảnh",
+      "prompt-pack": "Gói Prompt",
+      "timeline-draft": "Nháp Dòng Thời Gian",
+      "ready-for-render": "Sẵn Sàng Xuất Video"
+    },
+    "statuses": {
+      "pending": "Chờ xử lý",
+      "current": "Hiện tại",
+      "completed": "Đã hoàn thành",
+      "blocked": "Bị chặn"
+    },
+    "fields": {
+      "title": "Tiêu đề",
+      "summary": "Tóm tắt",
+      "audience": "Đối tượng",
+      "structure": "Cấu trúc",
+      "scenes": "Cảnh",
+      "duration": "Thời lượng",
+      "status": "Trạng thái",
+      "checks": "Kiểm tra",
+      "source": "Nguồn",
+      "generationSession": "Phiên tạo"
+    },
+    "values": {
+      "summary": "Một câu chuyện hình ảnh ngắn gọn được xây dựng từ một hướng sáng tạo duy nhất.",
+      "audience": "Khách hàng sản phẩm có ý thức về thiết kế",
+      "structure": "Mở đầu · Chi tiết · Chuyển động · Khung cuối"
+    },
+    "checks": {
+      "complete": "Tiêu đề, lời tường thuật và hình ảnh cảnh đã hoàn thành",
+      "incomplete": "Một số cảnh chưa hoàn thành",
+      "ready": "Video đã tạo và sẵn sàng",
+      "notReady": "Chưa có video hoàn chỉnh"
+    },
+    "sources": {
+      "script": "Kịch bản đã chọn",
+      "notPrepared": "Chưa gửi để tạo",
+      "notCreated": "Chưa tạo phiên"
+    }
+  },
+  "assetPipeline": {
+    "versionHistory": "Lịch sử phiên bản",
+    "current": "Hiện tại",
+    "tabs": {
+      "Preview": "Xem trước",
+      "Versions": "Phiên bản",
+      "Metadata": "Siêu dữ liệu",
+      "Dependency": "Phụ thuộc"
+    },
+    "actions": {
+      "restore": "Khôi phục",
+      "openPreview": "Mở xem trước"
+    },
+    "messages": {
+      "restored": "Đã khôi phục v{{sourceVersion}} thành v{{restoredVersion}} mới"
+    },
+    "fields": {
+      "provider": "Nhà cung cấp",
+      "workflow": "Quy trình",
+      "tags": "Thẻ"
+    },
+    "metadata": {
+      "mimeType": "Loại MIME",
+      "size": "Kích thước",
+      "resolution": "Độ phân giải",
+      "duration": "Thời lượng",
+      "checksum": "Tổng kiểm tra"
+    },
+    "preview": {
+      "status": "Trạng thái",
+      "currentVersion": "Phiên bản hiện tại",
+      "reference": "Tham chiếu",
+      "storage": "Lưu trữ"
+    },
+    "previewStatuses": {
+      "ready": "Sẵn sàng"
+    },
+    "storage": {
+      "mock-repository": "Kho lưu trữ mô phỏng"
+    },
+    "types": {
+      "image": "Hình ảnh",
+      "video": "Video",
+      "audio": "Âm thanh",
+      "subtitle": "Phụ đề",
+      "prompt": "Prompt",
+      "json": "JSON",
+      "srt": "SRT",
+      "markdown": "Markdown",
+      "thumbnail": "Ảnh nhỏ",
+      "voice": "Giọng nói",
+      "reference-image": "Hình ảnh Tham chiếu",
+      "generated-asset": "Tài sản Được tạo"
+    },
+    "sources": {
+      "import": "Nhập",
+      "metadata-review": "Xem xét siêu dữ liệu",
+      "quality-review": "Xem xét chất lượng",
+      "restore": "Khôi phục từ {{id}}"
+    },
+    "workflow": {
+      "quality-review": "Xem xét chất lượng"
+    },
+    "emptyDependencies": "Không có cạnh phụ thuộc."
+  }
+}

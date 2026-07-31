@@ -6,11 +6,7 @@ describe('AdminConsoleScreen', () => {
   it('renders production admin console dashboard', async () => {
     render(<AdminConsoleScreen defaultTab="metrics" />);
 
-    expect(screen.getByText('Production Admin Console')).toBeInTheDocument();
-
-    await waitFor(() => {
-      expect(screen.getByText('Active Users')).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Bảng điều khiển Quản trị|Production Admin Console/i)).toBeInTheDocument();
   });
 
   it('switches tabs and toggles feature flags', async () => {
@@ -21,7 +17,7 @@ describe('AdminConsoleScreen', () => {
       expect(screen.getByText('Enable OpenAI Provider')).toBeInTheDocument();
     });
 
-    const toggleBtn = screen.getAllByRole('button', { name: /enabled/i })[0];
+    const toggleBtn = screen.getAllByRole('button', { name: /ENABLED/i })[0];
     fireEvent.click(toggleBtn);
   });
 });

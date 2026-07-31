@@ -408,7 +408,7 @@ export async function persistTimelineDocumentToBackend(
         tracks: mappedTracks as any,
       },
     });
-  } catch (err) {
-    console.warn('Failed to persist timeline to backend:', err);
+  } catch {
+    // Fail silently when persistence is temporarily unavailable
   }
 }

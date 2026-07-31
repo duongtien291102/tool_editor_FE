@@ -7,7 +7,7 @@ describe('CommercialScreen', () => {
     render(<CommercialScreen defaultTab="profile" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Commercial Hub')).toBeInTheDocument();
+      expect(screen.getByText(/Commercial Hub|Trung tâm Thương mại/i)).toBeInTheDocument();
     });
 
     expect(screen.getByText('Senior AI Engineer')).toBeInTheDocument();
@@ -18,21 +18,21 @@ describe('CommercialScreen', () => {
     render(<CommercialScreen defaultTab="profile" />);
 
     await waitFor(() => {
-      expect(screen.getByText('Commercial Hub')).toBeInTheDocument();
+      expect(screen.getByText(/Commercial Hub|Trung tâm Thương mại/i)).toBeInTheDocument();
     });
 
-    const subscriptionTabBtn = screen.getByRole('button', { name: /subscription/i });
+    const subscriptionTabBtn = screen.getByRole('button', { name: /subscription|gói đăng ký/i });
     fireEvent.click(subscriptionTabBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Plan Policy & System Limits')).toBeInTheDocument();
+      expect(screen.getByText(/Plan Policy & System Limits|Chính sách gói/i)).toBeInTheDocument();
     });
 
-    const pricingTabBtn = screen.getByRole('button', { name: /pricing/i });
+    const pricingTabBtn = screen.getByRole('button', { name: /pricing|bảng giá/i });
     fireEvent.click(pricingTabBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Choose Your SaaS Plan')).toBeInTheDocument();
+      expect(screen.getByText(/Choose Your SaaS Plan|Chọn gói/i)).toBeInTheDocument();
     });
   });
 });

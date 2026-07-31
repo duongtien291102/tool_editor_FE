@@ -31,6 +31,6 @@ describe('AI Providers Feature Module', () => {
 
   it('renders AiProvidersScreen header title', async () => {
     render(<AiProvidersScreen />);
-    expect(await screen.findByText('AI Providers')).toBeInTheDocument();
+    expect(await screen.findByText(/Lớp Tích hợp Nhà cung cấp AI|AI Providers/i)).toBeInTheDocument();
   });
 });

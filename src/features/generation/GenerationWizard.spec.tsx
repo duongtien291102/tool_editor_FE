@@ -53,25 +53,24 @@ describe('GenerationScreen', () => {
   it('renders generation wizard screen', async () => {
     render(<GenerationScreen defaultTab="wizard" />);
 
-    expect(screen.getByText('Video Generation Experience')).toBeInTheDocument();
-    expect(screen.getByText('AI Video Generation Wizard')).toBeInTheDocument();
-    expect(screen.getByText('✨ Generate Video Now')).toBeInTheDocument();
+    expect(screen.getByText('Trải nghiệm Tạo Video')).toBeInTheDocument();
+    expect(screen.getByText('Trình hướng dẫn Tạo Video AI')).toBeInTheDocument();
+    expect(screen.getByText('✨ Tạo Video Ngay')).toBeInTheDocument();
   });
 
   it('runs generation pipeline wizard and completes video creation', async () => {
     render(<GenerationScreen defaultTab="wizard" />);
 
-    const generateBtn = screen.getByRole('button', { name: /generate video now/i });
-    fireEvent.click(generateBtn);
+    const generateBtn = screen.getByRole('button', { name: /tạo video ngay/i });
     fireEvent.click(generateBtn);
 
     await waitFor(() => {
-      expect(screen.getByText('Pipeline Execution Log')).toBeInTheDocument();
+      expect(screen.getByText('Nhật ký Thực thi Quy trình')).toBeInTheDocument();
     }, { timeout: 4000 });
 
     await waitFor(() => {
-      expect(screen.getByText('Generation Result Preview')).toBeInTheDocument();
-      expect(screen.getByText('📦 Download All Project Artifacts')).toBeInTheDocument();
+      expect(screen.getByText('Xem trước Kết quả Tạo')).toBeInTheDocument();
+      expect(screen.getByText('📦 Tải xuống Toàn bộ Artifacts Dự án')).toBeInTheDocument();
     }, { timeout: 6000 });
 
     expect(vi.mocked(generationService.createSession)).toHaveBeenCalledTimes(1);

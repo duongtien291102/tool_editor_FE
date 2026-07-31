@@ -71,6 +71,7 @@ export function ManualScriptWorkspace({
   const [proposals, setProposals] = useState<ScriptProposal[]>([]);
   const [generating, setGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
+  const [targetSceneCount, setTargetSceneCount] = useState<number>(4);
   const [insertingAt, setInsertingAt] = useState<number | null>(null);
   const [sceneError, setSceneError] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
@@ -162,7 +163,7 @@ export function ManualScriptWorkspace({
       const envelope = await responseData(
         apiClient.post<ApiEnvelope<ScriptProposalResponse>>(
           '/api/v1/generation/script-drafts',
-          { idea: draft.body.trim() },
+          { idea: draft.body.trim(), targetSceneCount },
           { timeout: 120_000 },
         ),
       );
@@ -424,6 +425,22 @@ export function ManualScriptWorkspace({
               : persistenceError
                 ? 'Chưa thể lưu vào database'
                 : `Đã lưu database ${new Date(savedAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`}
+          </div>
+          <div className="flex items-center gap-1.5 rounded-md border border-white/10 bg-[#111517] px-2 py-1">
+            <span className="text-[11px] font-medium text-zinc-400">Số cảnh:</span>
+            <select
+              value={targetSceneCount}
+              onChange={(e) => setTargetSceneCount(Number(e.target.value))}
+              disabled={generating}
+              aria-label="Chọn số cảnh cần tạo"
+              className="cursor-pointer bg-transparent text-xs font-semibold text-cyan-400 outline-none"
+            >
+              {[2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 15, 20].map((num) => (
+                <option key={num} value={num} className="bg-[#111517] text-zinc-200">
+                  {num} cảnh
+                </option>
+              ))}
+            </select>
           </div>
           <Button
             variant="outline"

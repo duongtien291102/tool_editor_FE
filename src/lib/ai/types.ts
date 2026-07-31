@@ -22,6 +22,7 @@ export interface ScriptGenerationInput {
   tone?: ScriptTone;
   duration?: number;
   platform?: ScriptPlatform;
+  sceneCount?: number;
 }
 
 export interface AIScriptScene {

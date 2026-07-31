@@ -24,7 +24,7 @@ export async function postGenerateScript(
   const envelope = await responseData(
     apiClient.post<ScriptDraftEnvelope>(
       '/api/v1/generation/script-drafts',
-      { idea: input.prompt },
+      { idea: input.prompt, targetSceneCount: input.sceneCount },
       { signal },
     ),
   );
